@@ -170,7 +170,7 @@ class Account:
             position.stock_split(ratio)
         elif transaction.activity == Activity.DIV:
             position.dividend(transaction.amount, transaction.trade_date)
-        elif transaction.activity == Activity.DIVNRA:
+        elif transaction.activity in [Activity.DIVNRA, Activity.DIVFT]:
             position.dividend_tax(transaction.amount)
         self._save_position(position)
 
