@@ -8,6 +8,7 @@ class Activity(Enum):
     BUY = "BUY"        # Buy
     SELL = "SELL"      # Sell
     DIV = "DIV"        # Dividend
+    DIVFT = "DIVFT"    # Dividend (foreign tax withheld)
     DIVNRA = "DIVNRA"  # Dividend tax
     SSP = "SSP"        # Stock Split
 
