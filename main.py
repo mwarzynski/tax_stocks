@@ -7,6 +7,24 @@ from nbp import *
 
 
 @dataclass
+class Dividend:
+    value: Decimal
+    tax_deducted: Decimal
+    date: datetime
+
+    def tax_to_pay(self) -> Decimal:
+        tax_total = self.value*Decimal(0.19)
+        payable = tax_total - self.tax_deducted
+        if payable <= 0:
+            return 0
+        return payable
+
+    def net(self) -> Decimal:
+        tax = self.tax_deducted + self.tax_to_pay()
+        return self.value - tax
+
+
+@dataclass
 class PositionAction:
     quantity: Decimal
     price: Decimal
@@ -30,12 +48,14 @@ class AccountPosition:
     _current_positions: List[PositionAction]
     _exchange: Exchange
     realized_changes: List[RealizedChange]
+    _dividends: List[Dividend]
 
     def __init__(self, symbol: str, exchange: Exchange):
         self.symbol = symbol
         self._current_positions = []
         self._exchange = exchange
         self.realized_changes = []
+        self._dividends = []
 
     def buy(self, quantity: Decimal, price: Decimal, date: datetime):
         self._current_positions.append(PositionAction(quantity, price, date))
@@ -78,16 +98,39 @@ class AccountPosition:
             self._current_positions[i].quantity = self._current_positions[i].quantity*ratio
             self._current_positions[i].price = self._current_positions[i].price/ratio
 
+    def dividend(self, value: Decimal, date: datetime):
+        self._dividends.append(Dividend(value, 0, date))
+
+    def dividend_tax(self, value: Decimal):
+        if self._dividends[-1].tax_deducted != 0:
+            raise Exception("invalid dividends values")
+        self._dividends[-1].tax_deducted = value
+
+    def dividends_received(self) -> (Decimal, Decimal, Decimal):
+        total = Decimal(0)
+        tax_to_pay = Decimal(0)
+        net = Decimal(0)
+
+        for d in self._dividends:
+            ratio = self._exchange.ratio(d.date)
+            total += d.value * ratio
+            tax_to_pay += d.tax_to_pay() * ratio
+            net += d.net() * ratio
+
+        return total, tax_to_pay, net
+
 
 class Account:
 
     _positions: Dict[str, AccountPosition]
     _realized_change: Dict[str, Decimal]
+    _dividends: Dict[str, Decimal]
     _exchange: Exchange
 
     def __init__(self, exchange):
         self._positions = {}
         self._realized_change = {}
+        self._dividends = {}
         self._exchange = exchange
 
     def _get_position(self, symbol: str) -> AccountPosition:
@@ -125,6 +168,10 @@ class Account:
         elif transaction.activity == Activity.SSP:
             ratio = self._evaluate_stock_split_ratio(transaction)
             position.stock_split(ratio)
+        elif transaction.activity == Activity.DIV:
+            position.dividend(transaction.amount, transaction.trade_date)
+        elif transaction.activity == Activity.DIVNRA:
+            position.dividend_tax(transaction.amount)
         self._save_position(position)
 
     def get_profit_per_symbol(self) -> Dict[str, Decimal]:
@@ -138,6 +185,17 @@ class Account:
 
     def position(self, symbol: str) -> AccountPosition:
         return self._positions[symbol]
+
+    def dividends(self) -> (Decimal, Decimal, Decimal):
+        total = Decimal(0)
+        tax_to_pay = Decimal(0)
+        net = Decimal(0)
+        for _, position in self._positions.items():
+            a,b,c = position.dividends_received()
+            total += a
+            tax_to_pay += b
+            net += c
+        return total, tax_to_pay, net
 
     def print_current_positions(self):
         for _, position in self._positions.items():
@@ -162,7 +220,7 @@ def main():
     for p in profits:
         print(f"{p[0]}: \t{round(p[1],4)} PLN")
 
-    print(f"\nNetto =\t{round(account.get_profit()*Decimal(0.81), 4)} PLN")
+    print(f"\nNet   =\t{round(account.get_profit()*Decimal(0.81), 4)} PLN")
     print(f"Total = {round(account.get_profit(),4)} PLN, Tax = {round(account.get_profit()*Decimal(0.19), 4)} PLN")
 
     # # Debug evaluations for a particular symbol:
@@ -177,6 +235,9 @@ def main():
     # # Debug current positions (validate with your portfolio):
     # print("\nCurrent positions:")
     # account.print_current_positions()
+
+    dividend_total, dividend_tax, dividend_net = account.dividends()
+    print(f"\nDividend: {round(dividend_total, 4)} PLN, Net: {round(dividend_net, 4)} PLN, Tax to pay: {round(dividend_tax, 4)} PLN")
 
 
 if __name__ == "__main__":
