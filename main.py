@@ -247,6 +247,43 @@ class Account:
         return total_cost
 
 
+    def print_stocks(self, show_summary_per_stock: bool = False):
+        print(f"STOCKS: Total  = {round(self.get_profit(),4)} PLN")
+        print(f"STOCKS: Net    = {round(self.get_profit()*Decimal(0.81), 4)} PLN")
+        print(f"STOCKS: Tax    = {round(self.get_profit()*Decimal(0.19), 4)} PLN")
+        print(f"STOCKS: Costs  = {round(self.cost(), 4)} PLN (4 PLN commision)")
+        print("\nSTOCKS summary (gain/loss):")
+
+        if not show_summary_per_stock:
+            return
+
+        profits = [(x[0], x[1]) for x in self.get_profit_per_symbol().items()]
+        profits.sort(key=lambda x: x[1], reverse=True)
+        for p in profits:
+            print(f"\t{p[0]}: \t{round(p[1],4)} PLN")
+
+    def print_dividends(self):
+        dividend_total, dividend_tax, dividend_net = self.dividends()
+        print(f"\nDIVIDENDS: Total = {round(dividend_total, 4)} PLN")
+        print(f"DIVIDENDS: Net   = {round(dividend_net, 4)} PLN")
+        print(f"DIVIDENDS: Tax   = {round(dividend_tax, 4)} PLN")
+        print("")
+
+    def print_stocks_transactions(self, symbol: str = ""):
+        symbols = []
+        if symbol != "":
+            symbols = [symbol]
+        else:
+            symbols = [s for s, _ in self._positions.items()]
+        print("\nTransactions:")
+        for symbol in symbols:
+            for c in self.position(symbol).realized_changes:
+                print(f"{symbol}: {c.date_buy.date()} - {c.date_sell.date()}: {c.price_buy} USD -> {c.price_sell} USD (*{round(c.quantity, 8)})"
+                      f" = {round(c.profit, 2)} PLN")
+                print(f"{c.date_buy.date()}: 1 PLN = {self._exchange.ratio(c.date_buy)} USD")
+                print(f"{c.date_sell.date()}: 1 PLN = {self._exchange.ratio(c.date_sell)} USD")
+
+
 def main():
     transactions = revolut.parse(sys.argv[1])
 
@@ -257,32 +294,15 @@ def main():
     for t in transactions:
         account.do_transaction(t)
 
-    profits = [(x[0], x[1]) for x in account.get_profit_per_symbol().items()]
-    profits.sort(key=lambda x: x[1], reverse=True)
-    for p in profits:
-        print(f"{p[0]}: \t{round(p[1],4)} PLN")
-
-    print(f"\nSTOCKS: Total  = {round(account.get_profit(),4)} PLN")
-    print(f"STOCKS: Net    = {round(account.get_profit()*Decimal(0.81), 4)} PLN")
-    print(f"STOCKS: Tax    = {round(account.get_profit()*Decimal(0.19), 4)} PLN")
-
-    # # Debug evaluations for a particular symbol:
-    # symbol = "AAPL"
-    # print(f"\nTransactions for '{symbol}':")
-    # for c in account.position(symbol).realized_changes:
-    #     print(f"{c.date_buy.date()} - {c.date_sell.date()}: {c.price_buy} USD -> {c.price_sell} USD (*{round(c.quantity, 2)})"
-    #           f"\t= {round(c.profit, 2)} PLN")
-    #     print(f"{c.date_buy.date()}: 1 PLN = {exchange.ratio(c.date_buy)} USD")
-    #     print(f"{c.date_sell.date()}: 1 PLN = {exchange.ratio(c.date_sell)} USD\n")
+    account.print_stocks(show_summary_per_stock=True)
+    account.print_dividends()
 
     # # Debug current positions (validate with your portfolio):
-    # print("\nCurrent positions:")
     # account.print_current_positions()
 
-    dividend_total, dividend_tax, dividend_net = account.dividends()
-    print(f"\nDIVIDEND: {round(dividend_total, 4)} PLN, Net: {round(dividend_net, 4)} PLN, Tax to pay: {round(dividend_tax, 4)} PLN")
-
-    print(f"\nCOSTS (4PLN commision): {round(account.cost(), 4)} PLN")
+    # Print out all taxable transactions (sells) with buy information.
+    # This should contain everything you need to evaluate the tax.
+    account.print_stocks_transactions()
 
 
 if __name__ == "__main__":
