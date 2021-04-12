@@ -248,10 +248,10 @@ class Account:
 
 
     def print_stocks(self, show_summary_per_stock: bool = False):
-        print(f"STOCKS: Total  = {round(self.get_profit(),4)} PLN")
-        print(f"STOCKS: Net    = {round(self.get_profit()*Decimal(0.81), 4)} PLN")
-        print(f"STOCKS: Tax    = {round(self.get_profit()*Decimal(0.19), 4)} PLN")
-        print(f"STOCKS: Costs  = {round(self.cost(), 4)} PLN (4 PLN commision)")
+        print(f"STOCKS: Total  = {round(self.get_profit(),4)} PLN (PIT-8 C.22)")
+        print(f"STOCKS: Net    = {round((self.get_profit()-self.cost()), 4)} PLN (PIT-8 C.26)")
+        print(f"STOCKS: Tax    = {round((self.get_profit()-self.cost())*Decimal(0.19), 4)} PLN (PIT-8 D.31)")
+        print(f"STOCKS: Costs  = {round(self.cost(), 4)} PLN [4 PLN commission] (PIT-8 C.23)")
         print("\nSTOCKS summary (gain/loss):")
 
         if not show_summary_per_stock:
@@ -264,9 +264,10 @@ class Account:
 
     def print_dividends(self):
         dividend_total, dividend_tax, dividend_net = self.dividends()
-        print(f"\nDIVIDENDS: Total = {round(dividend_total, 4)} PLN")
-        print(f"DIVIDENDS: Net   = {round(dividend_net, 4)} PLN")
-        print(f"DIVIDENDS: Tax   = {round(dividend_tax, 4)} PLN")
+        print(f"\nDIVIDENDS: Total      = {round(dividend_total, 4)} PLN")
+        print(f"DIVIDENDS: Net        = {round(dividend_net, 4)} PLN")
+        print(f"DIVIDENDS: Tax        = {round(float(dividend_total)*.19, 4)} PLN (PIT-36L K.132)")
+        print(f"DIVIDENDS: Tax (paid) = {round(float(dividend_total)*.19 - float(dividend_tax), 4)} PLN (PIT-36L K.133)")
         print("")
 
     def print_stocks_transactions(self, symbol: str = ""):
