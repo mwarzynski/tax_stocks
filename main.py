@@ -251,7 +251,9 @@ class Account:
         print(f"STOCKS: Total  = {round(self.get_profit(),4)} PLN (PIT-8 C.22)")
         print(f"STOCKS: Net    = {round((self.get_profit()-self.cost()), 4)} PLN (PIT-8 C.26)")
         print(f"STOCKS: Tax    = {round((self.get_profit()-self.cost())*Decimal(0.19), 4)} PLN (PIT-8 D.31)")
-        print(f"STOCKS: Costs  = {round(self.cost(), 4)} PLN [4 PLN commission] (PIT-8 C.23)")
+        print(f"STOCKS: Commission  = {round(self.cost(), 4)} PLN [4 PLN] (PIT-8 C.23)")
+        cost, profit = self.get_profits()
+        print(f"STOCKS: Profit: {round(profit, 2)} PLN, Cost: {round(cost, 2)} PLN")
         print("\nSTOCKS summary (gain/loss):")
 
         if not show_summary_per_stock:
@@ -269,6 +271,14 @@ class Account:
         print(f"DIVIDENDS: Tax        = {round(float(dividend_total)*.19, 4)} PLN (PIT-36L K.132)")
         print(f"DIVIDENDS: Tax (paid) = {round(float(dividend_total)*.19 - float(dividend_tax), 4)} PLN (PIT-36L K.133)")
         print("")
+
+    def get_profits(self):
+        a, b = Decimal(0), Decimal(0)
+        for symbol, position in self._positions.items():
+            for c in position.realized_changes:
+                a += c.price_buy * c.quantity * self._exchange.ratio(c.date_buy)
+                b += c.price_sell * c.quantity * self._exchange.ratio(c.date_sell)
+        return a, b
 
     def print_stocks_transactions(self, symbol: str = ""):
         symbols = []
