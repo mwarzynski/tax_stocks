@@ -197,15 +197,15 @@ class Account:
     def do_transaction(self, transaction: Transaction):
         position = self._get_position(transaction.symbol)
         if transaction.activity == Activity.BUY:
-            position.buy(transaction.quantity, transaction.price, transaction.trade_date, fee=self._evaluate_cost(transaction.trade_date))
+            position.buy(transaction.quantity, transaction.price, transaction.settle_date, fee=self._evaluate_cost(transaction.settle_date))
         elif transaction.activity == Activity.SELL:
-            change = position.sell(transaction.quantity, transaction.price, transaction.trade_date, fee=self._evaluate_cost(transaction.trade_date))
+            change = position.sell(transaction.quantity, transaction.price, transaction.settle_date, fee=self._evaluate_cost(transaction.settle_date))
             self._add_change(transaction.symbol, change)
         elif transaction.activity == Activity.SSP:
             ratio = self._evaluate_stock_split_ratio(transaction)
             position.stock_split(ratio)
         elif transaction.activity == Activity.DIV:
-            position.dividend(transaction.amount, transaction.trade_date)
+            position.dividend(transaction.amount, transaction.settle_date)
         elif transaction.activity in [Activity.DIVNRA, Activity.DIVFT]:
             position.dividend_tax(transaction.amount)
         self._save_position(position)
