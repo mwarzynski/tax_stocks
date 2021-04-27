@@ -1,8 +1,9 @@
-# Revolut Stock
+# Tax Stocks
 
 Script allows to compute realized gains based on the Revolut statements data.
 
 NOTE1: it uses Polish tax law and PLN as a currency.
+
 NOTE2: it assumes all transactions were made in 2020.
 
 ## How to run
@@ -29,3 +30,10 @@ TSLA: 	929299.0557 PLN
 Netto =	752732.2351 PLN
 Total = 929299.0557 PLN, Tax = 176566.8206 PLN
 ```
+
+## Other
+
+Helpful links:
+ - https://podatki.gov.pl
+ - https://kalkulatorgieldowy.pl
+
