@@ -8,9 +8,8 @@ NOTE2: it assumes all transactions were made in 2020.
 
 ## How to run
 
-First of all, you need to create a file which contains the transactions data.
-The easiest way would be to download Statements from Revolut and place all
-of the activity records to a CSV.
+You need to create a file which contains the transactions data.
+The easiest way would be to download Statements from Revolut and place all of the activity records to a CSV.
 
 Example:
 ```
@@ -20,11 +19,11 @@ Example:
 12/18/2020 12/18/2020 USD SELL TSLA - TESLA INC COM - TRD TSLA S 500 at 690.64 Principal. -500 690.64 345320
 ```
 
-(Let's say name of the file is `data.csv`.)
+(Let's say name of the file is `data/investing/2020_revolut.csv`.)
 
 Having the transactions in the expected format, it's sufficient to run the script:
 ```
-$ python main.py data.csv
+$ python main.py data/investing/2020_revolut.csv
 TSLA: 	929299.0557 PLN
 
 Netto =	752732.2351 PLN

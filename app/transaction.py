@@ -23,4 +23,3 @@ class Transaction:
     quantity: decimal.Decimal
     price: decimal.Decimal
     amount: decimal.Decimal
-
