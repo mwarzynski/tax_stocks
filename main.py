@@ -11,10 +11,7 @@ def main():
     exchange = app.ExchangeNBP()
 
     account = app.Account(exchange)
-
-    transactions.sort(key=lambda x: x.trade_date)
-    for t in transactions:
-        account.do_transaction(t)
+    account.do_transactions(transactions)
 
     account.print_stocks(show_summary_per_stock=True)
     account.print_dividends()

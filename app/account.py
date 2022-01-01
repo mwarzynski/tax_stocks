@@ -177,6 +177,11 @@ class Account:
             position.dividend_tax(transaction.amount)
         self._save_position(position)
 
+    def do_transactions(self, transactions: List[Transaction]):
+        transactions.sort(key=lambda x: x.trade_date)
+        for transaction in transactions:
+            self.do_transaction(transaction)
+
     def get_profit_per_symbol(self) -> Dict[str, Decimal]:
         return self._realized_change
 
