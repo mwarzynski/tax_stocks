@@ -1,5 +1,4 @@
 import csv
-import re
 
 from typing import List
 import datetime
@@ -15,40 +14,51 @@ class Revolut:
         self.print_invalid_lines = print_invalid_lines
 
     def provide(self) -> List[Transaction]:
-        raw_transactions = []
-        with open(self.file_name, "r") as f:
-            reader = csv.reader(f)
-            for row in reader:
-                raw_transactions.append(row[0])
-
         transactions = []
-        for rt in raw_transactions:
-            m = re.match(r"^(\d\d\/\d\d\/\d\d\d\d) (\d\d\/\d\d\/\d\d\d\d) USD (\w+) (\w+) (.*)"
-                         + " ([\d\.\(\)\-]+) ([\d\,\.\(\)]+) ([\d\,\.\(\)]+)$", str(rt))
-            if not m:
-                if self.print_invalid_lines:
-                    print(rt)
-                continue
+        with open(self.file_name, "r") as f:
+            reader = csv.reader(f, delimiter=',')
+            next(reader)  # skip header row (which contains description of columns)
+            for row in reader:
+                # Date,Ticker,Type,Quantity,Price per share,Total Amount,Currency,FX Rate
+                date = datetime.datetime.strptime(row[0].split(" ")[0], '%d/%m/%Y')
 
-            activity_type = m[3]
-            quantity = float(m[6])
-            if activity_type == 'SELL':
-                quantity *= -1
+                try:
+                    activity = Activity(row[2])
+                except ValueError:
+                    continue
 
-            amount = m[8].replace(",", "").replace("(", "").replace(")", "")
+                if activity is Activity.DIV:
+                    quantity = Decimal(0)
+                    price = Decimal(0)
+                    amount = Decimal(row[5])
+                    # Note: assumption here is that only US stocks were bought, therefore 15% tax.
+                    original_value = round((amount / Decimal(85.0)) * 100, 2)
+                    dividend_tax_deducted = round(original_value - amount, 2)
+                elif activity is Activity.SSP:
+                    quantity = Decimal(row[3])
+                    price = Decimal(0)
+                    amount = Decimal(0)
+                    dividend_tax_deducted = Decimal(0)
+                else:
+                    quantity = Decimal(row[3])
+                    price = Decimal(row[4])
+                    amount = Decimal(row[5])
+                    dividend_tax_deducted = Decimal(0)
 
-            trade_date = datetime.datetime.strptime(m[1], '%m/%d/%Y')
-            settle_date = datetime.datetime.strptime(m[2], '%m/%d/%Y')
+                currency = row[6]
 
-            transactions.append(Transaction(
-                trade_date,
-                settle_date,
-                "USD",          # Currency is hardcoded to USD.
-                Activity(activity_type),  # Activity Type
-                m[4],           # Symbol (e.g. TSLA)
-                Decimal(quantity),
-                Decimal(m[7]),
-                Decimal(amount),
-            ))
+                transaction = Transaction(
+                    trade_date=date,  # 20/04/1969
+                    settle_date=date,  # 20/04/1969
+                    currency=currency,  # USD
+                    activity=activity,  # BUY,SELL
+                    symbol=row[1],  # AAPL
+                    quantity=quantity,  # 100
+                    price=price,  # 420.69
+                    amount=amount,  # 42069
+                    dividend_tax_deducted=dividend_tax_deducted,
+                )
+
+                transactions.append(transaction)
 
         return transactions

@@ -13,10 +13,8 @@ The easiest way would be to download Statements from Revolut and place all of th
 
 Example:
 ```
-05/06/2020 05/08/2020 USD BUY TSLA - TESLA INC COM - TRD TSLA B 100 at 769.49 Principal. 100 769.49 (76949)
-08/28/2020 09/01/2020 USD SSP TSLA - TESLA INC COM - CA-SSP. Surrender old shs. -0.1 2292.10 0.00
-08/28/2020 09/01/2020 USD SSP TSLA - TESLA INC COM - CA-SSP. Add New shs.(TSLA:1->5) 0.5 458.42 0.00
-12/18/2020 12/18/2020 USD SELL TSLA - TESLA INC COM - TRD TSLA S 500 at 690.64 Principal. -500 690.64 345320
+06/05/2020 14:16:38,TSLA,BUY,1,769.49,769.49,USD,0.237530678
+18/05/2020 18:39:48,TSLA,SELL,1,807.01,807.01,USD,0.239085135
 ```
 
 (Let's say name of the file is `data/investing/2020_revolut.csv`.)

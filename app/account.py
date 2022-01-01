@@ -78,13 +78,8 @@ class AccountPosition:
             self._current_positions[i].quantity = self._current_positions[i].quantity*ratio
             self._current_positions[i].price = self._current_positions[i].price/ratio
 
-    def dividend(self, value: Decimal, date: datetime):
-        self._dividends.append(Dividend(value, 0, date))
-
-    def dividend_tax(self, value: Decimal):
-        if self._dividends[-1].tax_deducted != 0:
-            raise Exception("invalid dividends values")
-        self._dividends[-1].tax_deducted = value
+    def dividend(self, value: Decimal, tax_deducted: Decimal, date: datetime):
+        self._dividends.append(Dividend(value, tax_deducted, date))
 
     def dividends_received(self) -> (Decimal, Decimal, Decimal):
         total = Decimal(0)
@@ -101,8 +96,6 @@ class AccountPosition:
 
     def cost(self) -> Decimal:
         return self._cost
-
-
 
 
 class Account:
@@ -138,12 +131,10 @@ class Account:
             self._realized_change[symbol] = change
 
     def _evaluate_stock_split_ratio(self, transaction: Transaction) -> Decimal:
-        if transaction.quantity <= 0:
-            return Decimal(1)
         ratio = 1
-        if transaction.symbol == 'AAPL' and transaction.settle_date.strftime('%Y-%m-%d') == '2020-05-12':
+        if transaction.symbol == 'AAPL' and transaction.settle_date.strftime('%Y-%m-%d') == '2020-08-31':
             ratio = 4
-        if transaction.symbol == 'TSLA' and transaction.settle_date.strftime('%Y-%m-%d') == '2020-09-01':
+        if transaction.symbol == 'TSLA' and transaction.settle_date.strftime('%Y-%m-%d') == '2020-08-31':
             ratio = 5
         return Decimal(ratio)
 
@@ -172,9 +163,7 @@ class Account:
             ratio = self._evaluate_stock_split_ratio(transaction)
             position.stock_split(ratio)
         elif transaction.activity == Activity.DIV:
-            position.dividend(transaction.amount, transaction.settle_date)
-        elif transaction.activity in [Activity.DIVNRA, Activity.DIVFT]:
-            position.dividend_tax(transaction.amount)
+            position.dividend(transaction.amount, transaction.dividend_tax_deducted, transaction.settle_date)
         self._save_position(position)
 
     def do_transactions(self, transactions: List[Transaction]):
@@ -217,7 +206,6 @@ class Account:
         for _, position in self._positions.items():
             total_cost += position.cost()
         return total_cost
-
 
     def print_stocks(self, show_summary_per_stock: bool = False):
         print(f"STOCKS: Total  = {round(self.get_profit(),4)} PLN")

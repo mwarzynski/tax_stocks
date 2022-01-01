@@ -1,16 +1,14 @@
-import decimal
+from decimal import Decimal
 from datetime import datetime
 from dataclasses import dataclass
 from enum import Enum
 
 
 class Activity(Enum):
-    BUY = "BUY"        # Buy
-    SELL = "SELL"      # Sell
-    DIV = "DIV"        # Dividend
-    DIVFT = "DIVFT"    # Dividend (foreign tax withheld)
-    DIVNRA = "DIVNRA"  # Dividend tax
-    SSP = "SSP"        # Stock Split
+    BUY = "BUY"          # Buy
+    SELL = "SELL"        # Sell
+    DIV = "DIVIDEND"     # Dividend
+    SSP = "STOCK SPLIT"  # Stock Split
 
 
 @dataclass
@@ -20,6 +18,7 @@ class Transaction:
     currency: str              # 'USD'
     activity: Activity
     symbol: str                # 'TSLA'
-    quantity: decimal.Decimal
-    price: decimal.Decimal
-    amount: decimal.Decimal
+    quantity: Decimal
+    price: Decimal
+    amount: Decimal
+    dividend_tax_deducted: Decimal
