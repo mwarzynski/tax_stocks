@@ -4,7 +4,7 @@ from datetime import datetime
 
 from .equity import StockEquity, RealizedChange
 from .dividend import Dividend
-from .exchange import Exchange
+from .exchange import Exchange, Currency
 from .transaction import Transaction, Activity
 
 
@@ -41,8 +41,8 @@ class AccountPosition:
             raise Exception(f"symbol={self.symbol}: you can't sell stock that you don't own")
 
         quantity_sold = min(self._current_positions[0].quantity, sell_quantity)
-        buy_price = self._current_positions[0].price * self._exchange.ratio_pln_usd(self._current_positions[0].date)
-        sell_price_ratio = sell_price * self._exchange.ratio_pln_usd(sell_date)
+        buy_price = self._current_positions[0].price * self._exchange.ratio(self._current_positions[0].date, Currency.USD, Currency.PLN)
+        sell_price_ratio = sell_price * self._exchange.ratio(sell_date, Currency.USD, Currency.PLN)
         change = (sell_price_ratio - buy_price) * quantity_sold
 
         self.realized_changes.append(RealizedChange(
@@ -87,7 +87,7 @@ class AccountPosition:
         net = Decimal(0)
 
         for d in self._dividends:
-            ratio = self._exchange.ratio_pln_usd(d.date)
+            ratio = self._exchange.ratio(d.date, Currency.USD, Currency.PLN)
             total += d.value * ratio
             tax_to_pay += d.tax_to_pay() * ratio
             net += d.net() * ratio
@@ -236,8 +236,8 @@ class Account:
         a, b = Decimal(0), Decimal(0)
         for symbol, position in self._positions.items():
             for c in position.realized_changes:
-                a += c.price_buy * c.quantity * self._exchange.ratio_pln_usd(c.date_buy)
-                b += c.price_sell * c.quantity * self._exchange.ratio_pln_usd(c.date_sell)
+                a += c.price_buy * c.quantity * self._exchange.ratio(c.date_buy, Currency.USD, Currency.PLN)
+                b += c.price_sell * c.quantity * self._exchange.ratio(c.date_sell, Currency.USD, Currency.PLN)
         return a, b
 
     def print_stocks_transactions(self, symbol: str = ""):
@@ -251,5 +251,5 @@ class Account:
             for c in self.position(symbol).realized_changes:
                 print(f"{symbol}: {c.date_buy.date()} - {c.date_sell.date()}: {c.price_buy} USD -> {c.price_sell} USD (*{round(c.quantity, 8)})"
                       f" = {round(c.profit, 2)} PLN")
-                print(f"{c.date_buy.date()}: 1 PLN = {self._exchange.ratio_pln_usd(c.date_buy)} USD")
-                print(f"{c.date_sell.date()}: 1 PLN = {self._exchange.ratio_pln_usd(c.date_sell)} USD")
+                print(f"{c.date_buy.date()}: 1 PLN = {self._exchange.ratio(c.date_buy, Currency.USD, Currency.PLN)} USD")
+                print(f"{c.date_sell.date()}: 1 PLN = {self._exchange.ratio(c.date_sell, Currency.USD, Currency.PLN)} USD")
