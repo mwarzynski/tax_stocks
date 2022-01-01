@@ -8,11 +8,6 @@ from .exchange import Exchange, Currency
 from .transaction import Transaction, Activity
 
 
-# Revolut Premium provides 8 transactions per month for free.
-# Every next one costs 4 PLN.
-FREE_TRADES_PER_MONTH = 8
-
-
 class AccountPosition:
 
     symbol: str
@@ -20,7 +15,6 @@ class AccountPosition:
     _exchange: Exchange
     realized_changes: List[RealizedChange]
     _dividends: List[Dividend]
-    _cost: Decimal
 
     def __init__(self, symbol: str, exchange: Exchange):
         self.symbol = symbol
@@ -28,10 +22,6 @@ class AccountPosition:
         self._exchange = exchange
         self.realized_changes = []
         self._dividends = []
-        self._cost = Decimal(0)
-
-    def _add_cost(self, fee: Decimal):
-        self._cost += fee
 
     def buy(self, quantity: Decimal, price: Decimal, date: datetime, fee: Decimal = Decimal(0)):
         self._current_positions.append(StockEquity(quantity, quantity, price, date, fee))
@@ -54,9 +44,6 @@ class AccountPosition:
             change
         ))
 
-        fee_buy = (quantity_sold / self._current_positions[0].quantity_total) * self._current_positions[0].fee_buy
-        self._add_cost(fee_buy)
-
         self._current_positions[0].quantity -= quantity_sold
         # If we sold all quantity from the earliest position, remove it.
         if round(self._current_positions[0].quantity, 15) == 0:
@@ -64,13 +51,12 @@ class AccountPosition:
 
         return change, quantity_sold
 
-    def sell(self, sell_quantity: Decimal, sell_price: Decimal, sell_date: datetime, fee: Decimal = Decimal(0)) -> Decimal:
+    def sell(self, sell_quantity: Decimal, sell_price: Decimal, sell_date: datetime) -> Decimal:
         change = Decimal(0)
         while not round(sell_quantity, 15) == 0:
             change_i, quantity_sold_i = self._sell_i(sell_quantity, sell_price, sell_date)
             change += change_i
             sell_quantity -= quantity_sold_i
-        self._add_cost(fee)
         return change
 
     def stock_split(self, ratio: Decimal):
@@ -93,9 +79,6 @@ class AccountPosition:
             net += d.net() * ratio
 
         return total, tax_to_pay, net
-
-    def cost(self) -> Decimal:
-        return self._cost
 
 
 class Account:
@@ -138,26 +121,13 @@ class Account:
             ratio = 5
         return Decimal(ratio)
 
-    def _evaluate_cost(self, date: datetime) -> Decimal:
-        month = date.strftime("%m%y")
-        try:
-            number_of_transactions = self._transactions_per_month[month]
-        except KeyError:
-            number_of_transactions = 0
-        number_of_transactions += 1
-        self._transactions_per_month[month] = number_of_transactions
-
-        fee = Decimal(0)
-        if number_of_transactions > FREE_TRADES_PER_MONTH:
-            fee = Decimal(4)
-        return fee
 
     def do_transaction(self, transaction: Transaction):
         position = self._get_position(transaction.symbol)
         if transaction.activity == Activity.BUY:
-            position.buy(transaction.quantity, transaction.price, transaction.settle_date, fee=self._evaluate_cost(transaction.settle_date))
+            position.buy(transaction.quantity, transaction.price, transaction.settle_date)
         elif transaction.activity == Activity.SELL:
-            change = position.sell(transaction.quantity, transaction.price, transaction.settle_date, fee=self._evaluate_cost(transaction.settle_date))
+            change = position.sell(transaction.quantity, transaction.price, transaction.settle_date)
             self._add_change(transaction.symbol, change)
         elif transaction.activity == Activity.SSP:
             ratio = self._evaluate_stock_split_ratio(transaction)
@@ -201,17 +171,10 @@ class Account:
             quantity = sum([p.quantity for p in position._current_positions])
             print(f"{position.symbol}: {round(quantity, 2)}")
 
-    def cost(self):
-        total_cost = Decimal(0)
-        for _, position in self._positions.items():
-            total_cost += position.cost()
-        return total_cost
-
     def print_stocks(self, show_summary_per_stock: bool = False):
         print(f"STOCKS: Total  = {round(self.get_profit(),4)} PLN")
-        print(f"STOCKS: Net    = {round((self.get_profit()-self.cost()), 4)} PLN")
-        print(f"STOCKS: Tax    = {round((self.get_profit()-self.cost())*Decimal(0.19), 4)} PLN")
-        print(f"STOCKS: Commission  = {round(self.cost(), 4)} PLN [4 PLN]")
+        print(f"STOCKS: Net    = {round((self.get_profit()), 4)} PLN")
+        print(f"STOCKS: Tax    = {round((self.get_profit())*Decimal(0.19), 4)} PLN")
         cost, profit = self.get_profits()
         print(f"STOCKS: Profit: {round(profit, 2)} PLN, Cost: {round(cost, 2)} PLN")
         print("\nSTOCKS summary (gain/loss):")
