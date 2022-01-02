@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Optional
 from decimal import Decimal
 from datetime import datetime
 
@@ -23,10 +23,10 @@ class AccountPosition:
         self.realized_changes = []
         self._dividends = []
 
-    def buy(self, quantity: Decimal, price: Decimal, date: datetime, fee: Decimal = Decimal(0)):
-        self._current_positions.append(StockEquity(quantity, quantity, price, date, fee))
+    def buy(self, quantity: Decimal, price: Decimal, date: datetime):
+        self._current_positions.append(StockEquity(quantity, quantity, price, date))
 
-    def _sell_i(self, sell_quantity: Decimal, sell_price: Decimal, sell_date: datetime) -> (Decimal, Decimal):
+    def _sell_i(self, sell_quantity: Decimal, sell_price: Decimal, sell_date: datetime) -> RealizedChange:
         if len(self._current_positions) == 0:
             raise Exception(f"symbol={self.symbol}: you can't sell stock that you don't own")
 
@@ -35,29 +35,30 @@ class AccountPosition:
         sell_price_ratio = sell_price * self._exchange.ratio(sell_date, Currency.USD, Currency.PLN)
         change = (sell_price_ratio - buy_price) * quantity_sold
 
-        self.realized_changes.append(RealizedChange(
+        rc = RealizedChange(
             self._current_positions[0].date,
             sell_date,
             quantity_sold,
             self._current_positions[0].price,
             sell_price,
             change
-        ))
+        )
+        self.realized_changes.append(rc)
 
         self._current_positions[0].quantity -= quantity_sold
         # If we sold all quantity from the earliest position, remove it.
         if round(self._current_positions[0].quantity, 15) == 0:
             self._current_positions.pop(0)
 
-        return change, quantity_sold
+        return rc
 
-    def sell(self, sell_quantity: Decimal, sell_price: Decimal, sell_date: datetime) -> Decimal:
-        change = Decimal(0)
+    def sell(self, sell_quantity: Decimal, sell_price: Decimal, sell_date: datetime) -> [RealizedChange]:
+        realized_changes = []
         while not round(sell_quantity, 15) == 0:
-            change_i, quantity_sold_i = self._sell_i(sell_quantity, sell_price, sell_date)
-            change += change_i
-            sell_quantity -= quantity_sold_i
-        return change
+            rc = self._sell_i(sell_quantity, sell_price, sell_date)
+            realized_changes.append(rc)
+            sell_quantity -= rc.quantity
+        return realized_changes
 
     def stock_split(self, ratio: Decimal):
         for i, _ in enumerate(self._current_positions):
@@ -67,12 +68,14 @@ class AccountPosition:
     def dividend(self, value: Decimal, tax_deducted: Decimal, date: datetime):
         self._dividends.append(Dividend(value, tax_deducted, date))
 
-    def dividends_received(self) -> (Decimal, Decimal, Decimal):
+    def dividends_received(self, year: Optional[int]) -> (Decimal, Decimal, Decimal):
         total = Decimal(0)
         tax_to_pay = Decimal(0)
         net = Decimal(0)
 
         for d in self._dividends:
+            if year and d.date.year != year:
+                continue
             ratio = self._exchange.ratio(d.date, Currency.USD, Currency.PLN)
             total += d.value * ratio
             tax_to_pay += d.tax_to_pay() * ratio
@@ -84,7 +87,7 @@ class AccountPosition:
 class Account:
 
     _positions: Dict[str, AccountPosition]
-    _realized_change: Dict[str, Decimal]
+    _realized_change: Dict[str, List[RealizedChange]]
     _dividends: Dict[str, Decimal]
     _exchange: Exchange
 
@@ -107,11 +110,12 @@ class Account:
     def _save_position(self, position: AccountPosition):
         self._positions[position.symbol] = position
 
-    def _add_change(self, symbol: str, change: Decimal):
-        try:
-            self._realized_change[symbol] += change
-        except KeyError:
-            self._realized_change[symbol] = change
+    def _add_change(self, symbol: str, changes: List[RealizedChange]):
+        for change in changes:
+            try:
+                self._realized_change[symbol].append(change)
+            except KeyError:
+                self._realized_change[symbol] = [change]
 
     def _evaluate_stock_split_ratio(self, transaction: Transaction) -> Decimal:
         ratio = 1
@@ -121,14 +125,13 @@ class Account:
             ratio = 5
         return Decimal(ratio)
 
-
     def do_transaction(self, transaction: Transaction):
         position = self._get_position(transaction.symbol)
         if transaction.activity == Activity.BUY:
             position.buy(transaction.quantity, transaction.price, transaction.settle_date)
         elif transaction.activity == Activity.SELL:
-            change = position.sell(transaction.quantity, transaction.price, transaction.settle_date)
-            self._add_change(transaction.symbol, change)
+            realized_changes = position.sell(transaction.quantity, transaction.price, transaction.settle_date)
+            self._add_change(transaction.symbol, realized_changes)
         elif transaction.activity == Activity.SSP:
             ratio = self._evaluate_stock_split_ratio(transaction)
             position.stock_split(ratio)
@@ -141,24 +144,36 @@ class Account:
         for transaction in transactions:
             self.do_transaction(transaction)
 
-    def get_profit_per_symbol(self) -> Dict[str, Decimal]:
-        return self._realized_change
+    def get_profit_per_symbol(self, year: Optional[int] = None) -> Dict[str, Decimal]:
+        profits: Dict[str, Decimal] = {}
+        for symbol, changes in self._realized_change.items():
+            for change in changes:
+                if year and change.date_sell.year != year:
+                    continue
+                try:
+                    profits[symbol] += change.profit
+                except KeyError:
+                    profits[symbol] = change.profit
+        return profits
 
-    def get_profit(self) -> Decimal:
+    def get_profit(self, year: Optional[int] = None) -> Decimal:
         profit = Decimal(0)
-        for _, p in self._realized_change.items():
-            profit += p
+        for _, rcs in self._realized_change.items():
+            for rc in rcs:
+                if year and rc.date_sell.year != year:
+                    continue
+                profit += rc.profit
         return profit
 
     def position(self, symbol: str) -> AccountPosition:
         return self._positions[symbol]
 
-    def dividends(self) -> (Decimal, Decimal, Decimal):
+    def dividends(self, year: Optional[int]) -> (Decimal, Decimal, Decimal):
         total = Decimal(0)
         tax_to_pay = Decimal(0)
         net = Decimal(0)
         for _, position in self._positions.items():
-            a,b,c = position.dividends_received()
+            a,b,c = position.dividends_received(year)
             total += a
             tax_to_pay += b
             net += c
@@ -171,39 +186,41 @@ class Account:
             quantity = sum([p.quantity for p in position._current_positions])
             print(f"{position.symbol}: {round(quantity, 2)}")
 
-    def print_stocks(self, show_summary_per_stock: bool = False):
-        print(f"STOCKS: Total  = {round(self.get_profit(),4)} PLN")
-        print(f"STOCKS: Net    = {round((self.get_profit()), 4)} PLN")
-        print(f"STOCKS: Tax    = {round((self.get_profit())*Decimal(0.19), 4)} PLN")
-        cost, profit = self.get_profits()
+    def print_stocks(self, show_summary_per_stock: bool = False, year: Optional[int] = None):
+        if year:
+            print(f"Year: {year}\n")
+        print(f"STOCKS: Total  = {round((self.get_profit(year)), 4)} PLN")
+        print(f"STOCKS: Tax    = {round((self.get_profit(year))*Decimal(0.19), 4)} PLN")
+        cost, profit = self.get_profits(year)
         print(f"STOCKS: Profit: {round(profit, 2)} PLN, Cost: {round(cost, 2)} PLN")
-        print("\nSTOCKS summary (gain/loss):")
+        print("\nSTOCKS summary:")
 
         if not show_summary_per_stock:
             return
 
-        profits = [(x[0], x[1]) for x in self.get_profit_per_symbol().items()]
+        profits = [(x[0], x[1]) for x in self.get_profit_per_symbol(year).items()]
         profits.sort(key=lambda x: x[1], reverse=True)
         for p in profits:
             print(f"\t{p[0]}: \t{round(p[1],4)} PLN")
 
-    def print_dividends(self):
-        dividend_total, dividend_tax, dividend_net = self.dividends()
+    def print_dividends(self, year: Optional[int] = None):
+        dividend_total, dividend_tax, dividend_net = self.dividends(year)
         print(f"\nDIVIDENDS: Total      = {round(dividend_total, 4)} PLN")
         print(f"DIVIDENDS: Net        = {round(dividend_net, 4)} PLN")
         print(f"DIVIDENDS: Tax        = {round(float(dividend_total)*.19, 4)} PLN")
         print(f"DIVIDENDS: Tax (paid) = {round(float(dividend_total)*.19 - float(dividend_tax), 4)} PLN")
-        print("")
 
-    def get_profits(self):
+    def get_profits(self, year: Optional[int] = None):
         a, b = Decimal(0), Decimal(0)
         for symbol, position in self._positions.items():
             for c in position.realized_changes:
+                if year and c.date_sell.year != year:
+                    continue
                 a += c.price_buy * c.quantity * self._exchange.ratio(c.date_buy, Currency.USD, Currency.PLN)
                 b += c.price_sell * c.quantity * self._exchange.ratio(c.date_sell, Currency.USD, Currency.PLN)
         return a, b
 
-    def print_stocks_transactions(self, symbol: str = ""):
+    def print_stocks_transactions(self, symbol: str = "", year: Optional[int] = None):
         symbols = []
         if symbol != "":
             symbols = [symbol]
@@ -212,6 +229,8 @@ class Account:
         print("\nTransactions:")
         for symbol in symbols:
             for c in self.position(symbol).realized_changes:
+                if year and c.date_sell.year != year:
+                    continue
                 print(f"{symbol}: {c.date_buy.date()} - {c.date_sell.date()}: {c.price_buy} USD -> {c.price_sell} USD (*{round(c.quantity, 8)})"
                       f" = {round(c.profit, 2)} PLN")
                 print(f"{c.date_buy.date()}: 1 PLN = {self._exchange.ratio(c.date_buy, Currency.USD, Currency.PLN)} USD")

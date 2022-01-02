@@ -1,21 +1,32 @@
 import csv
-
 from typing import List
 import datetime
 from decimal import Decimal
+from os import listdir
+from os.path import isfile, join
 
 from app.transaction import Transaction, Activity
 
 
 class Revolut:
 
-    def __init__(self, file_name: str = "data.csv", print_invalid_lines: bool = False):
-        self.file_name = file_name
+    folder: str
+
+    def __init__(self, folder: str = "data/investing/revolut", print_invalid_lines: bool = False):
+        self.folder = folder
         self.print_invalid_lines = print_invalid_lines
 
     def provide(self) -> List[Transaction]:
+        files = [f for f in listdir(self.folder) if isfile(join(self.folder, f))]
         transactions = []
-        with open(self.file_name, "r") as f:
+        for file in files:
+            transactions += self._provide_for_file(join(self.folder, file))
+        return transactions
+
+    @staticmethod
+    def _provide_for_file(file_name: str) -> List[Transaction]:
+        transactions = []
+        with open(file_name, "r") as f:
             reader = csv.reader(f, delimiter=',')
             next(reader)  # skip header row (which contains description of columns)
             for row in reader:

@@ -9,7 +9,6 @@ class StockEquity:
     quantity_total: Decimal
     price: Decimal
     date: datetime
-    fee_buy: Decimal
 
 
 @dataclass
