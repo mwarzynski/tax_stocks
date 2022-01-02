@@ -119,6 +119,40 @@ class Degiro:
             transaction.dividend_tax_deducted = Decimal(row[8].replace(",", "."))*-1
             return transaction
 
+    def _parse_fundshare_cash_fund(self, row: List[str]) -> Optional[Transaction]:
+        if "FUNDSHARE UCITS EUR CASH FUND" not in row[3]:
+            return None
+        if "Konwersja funduszu gotówkowego: " not in row[5]:
+            return None
+        action_description = row[5].replace("Konwersja funduszu gotówkowego: ", "")
+
+        m = re.search('(Sprzedaż|Zakup) (.*) przy (.*) EUR', action_description)
+        if not m or len(m.groups()) != 3:
+            return None
+
+        groups = m.groups()
+        v1 = Decimal(groups[1].replace("\xa0", "").replace(",", "."))
+        v2 = Decimal(groups[2].replace("\xa0", "").replace(",", "."))
+        activity = Activity.SELL
+        if groups[0] == "Zakup":
+            activity = Activity.BUY
+
+        trade_date, settle_date = self._parse_dates(row)
+
+        transaction = Transaction(
+                    trade_date=trade_date,  # 20/04/1969
+                    settle_date=settle_date,  # 20/04/1969
+                    currency=Currency.EUR,  # EUR
+                    activity=activity,  # BUY,SELL
+                    symbol="#EUR",
+                    quantity=v1,  # 100
+                    price=v2,  # 420.69
+                    amount=v1*v2,  # 42069
+                    dividend_tax_deducted=Decimal(0),
+                )
+
+        return transaction
+
     def _provide_for_file(self, file_name: str) -> List[Transaction]:
         transactions = []
         with open(file_name, "r") as f:
@@ -130,6 +164,11 @@ class Degiro:
             for row in reader:
                 # Data,Czas,Data,Produkt,ISIN,Opis,Kurs,Zmiana,,Saldo,,Identyfikator zlecenia
                 transaction = self._parse_dividend(row)
+                if transaction:
+                    transactions.append(transaction)
+                    continue
+
+                transaction = self._parse_fundshare_cash_fund(row)
                 if transaction:
                     transactions.append(transaction)
                     continue
