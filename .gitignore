@@ -1,1 +1,2 @@
-data/investing
+data/investing/degiro/*.csv
+data/investing/revolut/*.csv

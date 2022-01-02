@@ -28,7 +28,10 @@ class Revolut:
         transactions = []
         with open(file_name, "r") as f:
             reader = csv.reader(f, delimiter=',')
-            next(reader)  # skip header row (which contains description of columns)
+            try:
+                next(reader)  # skip header row (which contains description of columns)
+            except StopIteration:
+                return []
             for row in reader:
                 # Date,Ticker,Type,Quantity,Price per share,Total Amount,Currency,FX Rate
                 date = datetime.datetime.strptime(row[0].split(" ")[0], '%d/%m/%Y')
