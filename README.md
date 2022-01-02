@@ -1,5 +1,9 @@
 # tax_stocks
 
+Application computes the profits (and losses) for stocks transactions and dividends for particular fiscal year.
+
+Polish translation (for SEO): aplikacja licząca podatek od akcji i dywidend.
+
 ## Why?
 
 Most of the applications which provide stock trading functionality for retail traders generate the tax forms automatically.
@@ -19,8 +23,8 @@ There are certain assumptions hardcoded in the code.
 ## Supported platforms
 
 Current implementation supports two platforms: Revolut and Degiro.
-Transactions providers are abstracted (behind an interface),
-therefore implementation of other platforms should be relatively easy.
+Transactions providers are implemented behind an interface,
+therefore adding implementation for other platforms should be relatively easy.
 
 Application uses following code structure to keep the CSV files fairly organised: `data/investing/{platform}/{year}.csv`.
 
@@ -62,7 +66,7 @@ $ ls -al data/investing/revolut
 If you already have the data, then it's sufficient to run the script as follows:
 ```
 $ python main.py
-tax_stocks: allows to compute realized gains based on the Revolut statements data.
+tax_stocks: computes the profits (and losses) for stocks transactions and dividends for particular fiscal year.
 Example: python main.py 2020
 
 $ python main.py 2020

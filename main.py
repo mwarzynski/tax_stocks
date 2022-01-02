@@ -4,7 +4,7 @@ import app
 
 
 def help():
-    print("""tax_stocks: allows to compute realized gains based on the Revolut statements data.
+    print("""tax_stocks: computes the profits (and losses) for stocks transactions and dividends for particular fiscal year.
 Example: python main.py 2021""")
 
 
