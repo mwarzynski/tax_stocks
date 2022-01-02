@@ -15,9 +15,14 @@ def main():
         help()
         return
 
-    revolut = app.Revolut()
+    providers = [
+        app.Degiro(),
+        app.Revolut(),
+    ]
 
-    transactions = revolut.provide()
+    transactions = []
+    for provider in providers:
+        transactions += provider.provide()
 
     exchange = app.ExchangeNBP()
 
