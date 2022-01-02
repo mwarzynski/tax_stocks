@@ -41,7 +41,7 @@ class NBP:
             return Decimal(1)
         day = day - timedelta(days=1)
         try:
-            return self._day_ratio[day][c_from]
+            return self._day_ratio[day.replace(hour=0, minute=0)][c_from]
         except KeyError as e:
             if max_days_prior_to_check <= 0:
                 raise e

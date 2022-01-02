@@ -1,5 +1,6 @@
 import csv
 import re
+from typing import Optional
 from typing import List
 import datetime
 from decimal import Decimal
@@ -84,6 +85,40 @@ class Degiro:
 
         return activity, quantity, price, currency
 
+    _dividend: Optional[Transaction]
+
+    def _parse_dates(self, row: List[str]) -> (datetime, datetime):
+        settle_date = datetime.datetime.strptime(row[0], '%d-%m-%Y')
+        trade_date = datetime.datetime.strptime(row[2], '%d-%m-%Y')
+        trade_date_time_hour = int(row[1].split(":")[0])
+        trade_date_time_minutes = int(row[1].split(":")[1])
+        trade_date = trade_date.replace(hour=trade_date_time_hour, minute=trade_date_time_minutes)
+        return trade_date, settle_date
+
+    def _parse_dividend(self, row: List[str]) -> Optional[Transaction]:
+        if "Dywidend" not in row[5]:
+            return None
+
+        if row[5] == "Dywidenda":
+            settle_date, trade_date = self._parse_dates(row)
+            self._dividend = Transaction(
+                    trade_date=trade_date,  # 20/04/1969
+                    settle_date=settle_date,  # 20/04/1969
+                    currency=Currency(row[7]),  # USD
+                    activity=Activity.DIV,  # BUY,SELL
+                    symbol=self._product_to_symbol(row[3]),  # AAPL
+                    quantity=Decimal(0),  # 100
+                    price=Decimal(0),  # 420.69
+                    amount=Decimal(row[8].replace(",", ".")),  # 42069
+                    dividend_tax_deducted=Decimal(0),
+                )
+            return None
+
+        if row[5] == "Podatek Dywidendowy":
+            transaction = self._dividend
+            transaction.dividend_tax_deducted = Decimal(row[8].replace(",", "."))*-1
+            return transaction
+
     def _provide_for_file(self, file_name: str) -> List[Transaction]:
         transactions = []
         with open(file_name, "r") as f:
@@ -94,6 +129,11 @@ class Degiro:
                 return []
             for row in reader:
                 # Data,Czas,Data,Produkt,ISIN,Opis,Kurs,Zmiana,,Saldo,,Identyfikator zlecenia
+                transaction = self._parse_dividend(row)
+                if transaction:
+                    transactions.append(transaction)
+                    continue
+
                 try:
                     activity, quantity, price, currency = self._description_to_action(row[5])
                     symbol = self._product_to_symbol(row[3])
@@ -109,11 +149,7 @@ class Degiro:
                     print("EXCEPTION", row, e)
                     raise e
 
-                settle_date = datetime.datetime.strptime(row[0], '%d-%m-%Y')
-                trade_date = datetime.datetime.strptime(row[2], '%d-%m-%Y')
-                trade_date_time_hour = int(row[1].split(":")[0])
-                trade_date_time_minutes = int(row[1].split(":")[1])
-                trade_date = trade_date.replace(hour=trade_date_time_hour, minute=trade_date_time_minutes)
+                trade_date, settle_date = self._parse_dates(row)
 
                 transaction = Transaction(
                     trade_date=trade_date,  # 20/04/1969
