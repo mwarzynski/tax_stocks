@@ -7,6 +7,7 @@ from os import listdir
 from os.path import isfile, join
 
 from app.transaction import Transaction, Activity
+from app.exchange import Currency
 
 
 class DegiroRowIgnorable(BaseException):
@@ -46,7 +47,9 @@ class Degiro:
         "SUMO LOGIC": "SUMO",
         "ROCKET COMPANIES": "RKT",
         "FASTLY": "FSLY",
-        "NVIDIA CORPORATION": "NVDA"
+        "NVIDIA CORPORATION": "NVDA",
+        "CD PROJEKT RED": "CDP",
+        "ALPHABET INC. - CLASS A": "GOOGL"
     }
 
     def __init__(self, folder: str = "data/investing/degiro", print_invalid_lines: bool = False):
@@ -57,6 +60,7 @@ class Degiro:
         for p, symbol in self._product_to_symbol_map.items():
             if p in product:
                 return symbol
+        raise Exception(f"unknown product {product}")
 
     def provide(self) -> List[Transaction]:
         files = [f for f in listdir(self.folder) if isfile(join(self.folder, f))]
@@ -65,9 +69,9 @@ class Degiro:
             transactions += self._provide_for_file(join(self.folder, file))
         return transactions
 
-    def _description_to_action(self, description: str) -> (Activity, Decimal, Decimal):
-        m = re.search('(Sprzedaż|Kupno) ([\d ]+) (.*)@([0-9,]+) USD', description)
-        if not m or len(m.groups()) != 4:
+    def _description_to_action(self, description: str) -> (Activity, Decimal, Decimal, str):
+        m = re.search('(Sprzedaż|Kupno) ([\d ]+) (.*)@([0-9,\\xa0]+) ([A-Z]+)', description)
+        if not m or len(m.groups()) != 5:
             raise DegiroRowIgnorable()
         groups = m.groups()
 
@@ -75,9 +79,10 @@ class Degiro:
         if groups[0] == "Sprzedaż":
             activity = Activity.SELL
         quantity = Decimal(groups[1].replace("\xa0", ""))
-        price = Decimal(groups[3].replace(",", "."))
+        price = Decimal(groups[3].replace(",", ".").replace("\xa0", ""))
+        currency = Currency(groups[4])
 
-        return activity, quantity, price
+        return activity, quantity, price, currency
 
     def _provide_for_file(self, file_name: str) -> List[Transaction]:
         transactions = []
@@ -90,7 +95,7 @@ class Degiro:
             for row in reader:
                 # Data,Czas,Data,Produkt,ISIN,Opis,Kurs,Zmiana,,Saldo,,Identyfikator zlecenia
                 try:
-                    activity, quantity, price = self._description_to_action(row[5])
+                    activity, quantity, price, currency = self._description_to_action(row[5])
                     symbol = self._product_to_symbol(row[3])
                 except DegiroRowIgnorable:
                     continue
@@ -103,8 +108,6 @@ class Degiro:
                 except Exception as e:
                     print("EXCEPTION", row, e)
                     raise e
-
-                currency = "USD"
 
                 settle_date = datetime.datetime.strptime(row[0], '%d-%m-%Y')
                 trade_date = datetime.datetime.strptime(row[2], '%d-%m-%Y')

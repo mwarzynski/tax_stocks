@@ -3,6 +3,8 @@ from datetime import datetime
 from dataclasses import dataclass
 from enum import Enum
 
+from .exchange import Currency
+
 
 class Activity(Enum):
     BUY = "BUY"          # Buy
@@ -15,7 +17,7 @@ class Activity(Enum):
 class Transaction:
     trade_date: datetime
     settle_date: datetime
-    currency: str              # 'USD'
+    currency: Currency
     activity: Activity
     symbol: str                # 'TSLA'
     quantity: Decimal

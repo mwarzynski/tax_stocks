@@ -23,16 +23,16 @@ class AccountPosition:
         self.realized_changes = []
         self._dividends = []
 
-    def buy(self, quantity: Decimal, price: Decimal, date: datetime):
-        self._current_positions.append(StockEquity(quantity, quantity, price, date))
+    def buy(self, quantity: Decimal, price: Decimal, date: datetime, currency: Currency):
+        self._current_positions.append(StockEquity(quantity, quantity, price, date, currency))
 
     def _sell_i(self, sell_quantity: Decimal, sell_price: Decimal, sell_date: datetime) -> RealizedChange:
         if len(self._current_positions) == 0:
             raise Exception(f"symbol={self.symbol}: you can't sell stock that you don't own")
 
         quantity_sold = min(self._current_positions[0].quantity, sell_quantity)
-        buy_price = self._current_positions[0].price * self._exchange.ratio(self._current_positions[0].date, Currency.USD, Currency.PLN)
-        sell_price_ratio = sell_price * self._exchange.ratio(sell_date, Currency.USD, Currency.PLN)
+        buy_price = self._current_positions[0].price * self._exchange.ratio(self._current_positions[0].date, self._current_positions[0].currency, Currency.PLN)
+        sell_price_ratio = sell_price * self._exchange.ratio(sell_date, self._current_positions[0].currency, Currency.PLN)
         change = (sell_price_ratio - buy_price) * quantity_sold
 
         rc = RealizedChange(
@@ -41,7 +41,8 @@ class AccountPosition:
             quantity_sold,
             self._current_positions[0].price,
             sell_price,
-            change
+            change,
+            self._current_positions[0].currency,
         )
         self.realized_changes.append(rc)
 
@@ -65,8 +66,8 @@ class AccountPosition:
             self._current_positions[i].quantity = self._current_positions[i].quantity*ratio
             self._current_positions[i].price = self._current_positions[i].price/ratio
 
-    def dividend(self, value: Decimal, tax_deducted: Decimal, date: datetime):
-        self._dividends.append(Dividend(value, tax_deducted, date))
+    def dividend(self, value: Decimal, tax_deducted: Decimal, date: datetime, currency: Currency):
+        self._dividends.append(Dividend(value, tax_deducted, date, currency))
 
     def dividends_received(self, year: Optional[int]) -> (Decimal, Decimal, Decimal):
         total = Decimal(0)
@@ -76,7 +77,7 @@ class AccountPosition:
         for d in self._dividends:
             if year and d.date.year != year:
                 continue
-            ratio = self._exchange.ratio(d.date, Currency.USD, Currency.PLN)
+            ratio = self._exchange.ratio(d.date, d.currency, Currency.PLN)
             total += d.value * ratio
             tax_to_pay += d.tax_to_pay() * ratio
             net += d.net() * ratio
@@ -128,7 +129,7 @@ class Account:
     def do_transaction(self, transaction: Transaction):
         position = self._get_position(transaction.symbol)
         if transaction.activity == Activity.BUY:
-            position.buy(transaction.quantity, transaction.price, transaction.settle_date)
+            position.buy(transaction.quantity, transaction.price, transaction.settle_date, transaction.currency)
         elif transaction.activity == Activity.SELL:
             realized_changes = position.sell(transaction.quantity, transaction.price, transaction.settle_date)
             self._add_change(transaction.symbol, realized_changes)
@@ -136,7 +137,7 @@ class Account:
             ratio = self._evaluate_stock_split_ratio(transaction)
             position.stock_split(ratio)
         elif transaction.activity == Activity.DIV:
-            position.dividend(transaction.amount, transaction.dividend_tax_deducted, transaction.settle_date)
+            position.dividend(transaction.amount, transaction.dividend_tax_deducted, transaction.settle_date, transaction.currency)
         self._save_position(position)
 
     def do_transactions(self, transactions: List[Transaction]):
@@ -219,12 +220,11 @@ class Account:
             for c in position.realized_changes:
                 if year and c.date_sell.year != year:
                     continue
-                a += c.price_buy * c.quantity * self._exchange.ratio(c.date_buy, Currency.USD, Currency.PLN)
-                b += c.price_sell * c.quantity * self._exchange.ratio(c.date_sell, Currency.USD, Currency.PLN)
+                a += c.price_buy * c.quantity * self._exchange.ratio(c.date_buy, c.currency, Currency.PLN)
+                b += c.price_sell * c.quantity * self._exchange.ratio(c.date_sell, c.currency, Currency.PLN)
         return a, b
 
     def print_stocks_transactions(self, symbol: str = "", year: Optional[int] = None):
-        symbols = []
         if symbol != "":
             symbols = [symbol]
         else:
@@ -236,5 +236,5 @@ class Account:
                     continue
                 print(f"{symbol}: {c.date_buy.date()} - {c.date_sell.date()}: {c.price_buy} USD -> {c.price_sell} USD (*{round(c.quantity, 8)})"
                       f" = {round(c.profit, 2)} PLN")
-                print(f"{c.date_buy.date()}: 1 PLN = {self._exchange.ratio(c.date_buy, Currency.USD, Currency.PLN)} USD")
-                print(f"{c.date_sell.date()}: 1 PLN = {self._exchange.ratio(c.date_sell, Currency.USD, Currency.PLN)} USD")
+                print(f"{c.date_buy.date()}: 1 PLN = {self._exchange.ratio(c.date_buy, c.currency, Currency.PLN)} USD")
+                print(f"{c.date_sell.date()}: 1 PLN = {self._exchange.ratio(c.date_sell, c.currency, Currency.PLN)} USD")

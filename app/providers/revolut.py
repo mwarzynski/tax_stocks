@@ -6,6 +6,7 @@ from os import listdir
 from os.path import isfile, join
 
 from app.transaction import Transaction, Activity
+from app.exchange import Currency
 
 
 class Revolut:
@@ -59,7 +60,7 @@ class Revolut:
                     amount = Decimal(row[5])
                     dividend_tax_deducted = Decimal(0)
 
-                currency = row[6]
+                currency = Currency(row[6])
 
                 transaction = Transaction(
                     trade_date=date,  # 20/04/1969

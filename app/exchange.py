@@ -5,9 +5,9 @@ from enum import Enum
 
 
 class Currency(Enum):
-    PLN = 1
-    EUR = 2
-    USD = 3
+    PLN = "PLN"
+    EUR = "EUR"
+    USD = "USD"
 
 
 class Exchange:

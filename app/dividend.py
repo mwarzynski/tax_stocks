@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from decimal import Decimal
 from datetime import datetime
 
+from .exchange import Currency
+
 
 @dataclass
 class Dividend:
@@ -9,6 +11,7 @@ class Dividend:
     value: Decimal
     tax_deducted: Decimal
     date: datetime
+    currency: Currency
 
     def tax_to_pay(self) -> Decimal:
         tax_total = self.value*Decimal(0.19)

@@ -37,6 +37,8 @@ class NBP:
                 self._day_ratio[date] = ratios
 
     def ratio(self, day: datetime, c_from: Currency, c_to: Currency, max_days_prior_to_check: int = 5) -> Decimal:
+        if c_from is Currency.PLN:
+            return Decimal(1)
         day = day - timedelta(days=1)
         try:
             return self._day_ratio[day][c_from]
