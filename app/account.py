@@ -189,11 +189,13 @@ class Account:
     def print_stocks(self, show_summary_per_stock: bool = False, year: Optional[int] = None):
         if year:
             print(f"Year: {year}\n")
-        print(f"STOCKS: Total  = {round((self.get_profit(year)), 4)} PLN")
-        print(f"STOCKS: Tax    = {round((self.get_profit(year))*Decimal(0.19), 4)} PLN")
+
+        print("=== Stocks\n")
+        print(f"Profit = {round((self.get_profit(year)), 4)} PLN")
+        print(f"Tax    = {round((self.get_profit(year))*Decimal(0.19), 4)} PLN")
         cost, profit = self.get_profits(year)
-        print(f"STOCKS: Profit: {round(profit, 2)} PLN, Cost: {round(cost, 2)} PLN")
-        print("\nSTOCKS summary:")
+        print(f"Sell: {round(profit, 2)} PLN, Buy: {round(cost, 2)} PLN")
+        print("")
 
         if not show_summary_per_stock:
             return
@@ -205,10 +207,11 @@ class Account:
 
     def print_dividends(self, year: Optional[int] = None):
         dividend_total, dividend_tax, dividend_net = self.dividends(year)
-        print(f"\nDIVIDENDS: Total      = {round(dividend_total, 4)} PLN")
-        print(f"DIVIDENDS: Net        = {round(dividend_net, 4)} PLN")
-        print(f"DIVIDENDS: Tax        = {round(float(dividend_total)*.19, 4)} PLN")
-        print(f"DIVIDENDS: Tax (paid) = {round(float(dividend_total)*.19 - float(dividend_tax), 4)} PLN")
+        print("\n=== Dividends\n")
+        print(f"Total      = {round(dividend_total, 4)} PLN")
+        print(f"Net        = {round(dividend_net, 4)} PLN")
+        print(f"Tax        = {round(float(dividend_total)*.19, 4)} PLN")
+        print(f"Tax (paid) = {round(float(dividend_total)*.19 - float(dividend_tax), 4)} PLN")
 
     def get_profits(self, year: Optional[int] = None):
         a, b = Decimal(0), Decimal(0)

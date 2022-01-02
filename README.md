@@ -24,17 +24,22 @@ tax_stocks: allows to compute realized gains based on the Revolut statements dat
 Example: python main.py 2020
 
 $ python main.py 2020
-STOCKS: Total  = 50420.6969 PLN
-STOCKS: Tax    = 9579.9324 PLN
-STOCKS: Profit: 120480.12 PLN, Cost: 70059.4231 PLN
+Year: 2020
 
-STOCKS summary:
+=== Stocks
+
+Profit = 50420.6969 PLN
+Tax    = 9579.9324 PLN
+Sell: 120480.12 PLN, Buy: 70059.4231 PLN
+
 	TSLA: 	50420.6969 PLN
 
-DIVIDENDS: Total      = 0.0000 PLN
-DIVIDENDS: Net        = 0.0000 PLN
-DIVIDENDS: Tax        = 0.0 PLN
-DIVIDENDS: Tax (paid) = 0.0 PLN
+=== Dividends
+
+Total      = 0.0000 PLN
+Net        = 0.0000 PLN
+Tax        = 0.0000 PLN
+Tax (paid) = 0.0000 PLN
 ```
 
 ## Other
