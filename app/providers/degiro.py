@@ -17,13 +17,46 @@ class Degiro:
 
     folder: str
 
-    _product_to_symbol = {
-        "TESLA MOTORS INC. - C": "TSLA",
+    _product_to_symbol_map = {
+        "TESLA": "TSLA",
+        "INVITAE CORPORATION": "NVTA",
+        "PALANTIR": "PLTR",
+        "COINBASE": "COIN",
+        "TATTOOED CHEF": "TTCF",
+        "GAMESTOP": "GME",  # xD
+        "SQUARE": "SQ",
+        "NORDSTROM": "JWN",
+        "ENPHASE ENERGY": "ENPH",
+        "DROPBOX": "DBX",
+        "WALGREENS BOOTS ALLIAN": "WBA",
+        "NIO INC": "NIO",
+        "APPLE INC": "AAPL",
+        "LEMONADE INC": "LMND",
+        "META PLATFORMS INC": "META",
+        "SHIFT TECHNOLOGIES INC": "SFT",
+        "ETSY": "ETSY",
+        "PFIZER": "PFE",
+        "NOKIA": "NOK",
+        "AMC": "AMC",
+        "MICROSOFT CORPORATION": "MSFT",
+        "PELOTON": "PTON",
+        "REDFIN": "RDFN",
+        "CORSAIR GAMING": "CRSR",
+        "TMC THE METALS CO": "TMC",
+        "SUMO LOGIC": "SUMO",
+        "ROCKET COMPANIES": "RKT",
+        "FASTLY": "FSLY",
+        "NVIDIA CORPORATION": "NVDA"
     }
 
     def __init__(self, folder: str = "data/investing/degiro", print_invalid_lines: bool = False):
         self.folder = folder
         self.print_invalid_lines = print_invalid_lines
+
+    def _product_to_symbol(self, product: str) -> str:
+        for p, symbol in self._product_to_symbol_map.items():
+            if p in product:
+                return symbol
 
     def provide(self) -> List[Transaction]:
         files = [f for f in listdir(self.folder) if isfile(join(self.folder, f))]
@@ -58,7 +91,7 @@ class Degiro:
                 # Data,Czas,Data,Produkt,ISIN,Opis,Kurs,Zmiana,,Saldo,,Identyfikator zlecenia
                 try:
                     activity, quantity, price = self._description_to_action(row[5])
-                    symbol = self._product_to_symbol[row[3]]
+                    symbol = self._product_to_symbol(row[3])
                 except DegiroRowIgnorable:
                     continue
                 except KeyError:
