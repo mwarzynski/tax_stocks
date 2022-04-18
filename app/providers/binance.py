@@ -2,26 +2,26 @@ import csv
 from os import listdir
 from os.path import isfile, join
 
-from app.crypto import *
+from app.transfer import *
 
 
-class Binance(TransactionProvider):
+class Binance(TransferProvider):
 
-    _transactions = List[Transaction]
+    _transfers = List[Transfer]
 
     def __init__(self, folder: str = "data/investing/binance") -> None:
         super().__init__()
-        self._transactions = self._parse_folder(folder)
+        self._transfers = self._parse_folder(folder)
 
-    def _parse_folder(self, folder: str) -> List[Transaction]:
+    def _parse_folder(self, folder: str) -> List[Transfer]:
         files = [f for f in listdir(folder) if isfile(join(folder, f))]
         transactions = []
         for file in files:
             transactions += self._parse_file(join(folder, file))
         return transactions
 
-    def _parse_file(self, file_name: str) -> List[Transaction]:
-        transactions: List[Transaction] = []
+    def _parse_file(self, file_name: str) -> List[Transfer]:
+        transactions: List[Transfer] = []
         with open(file_name, "r") as f:
             reader = csv.reader(f, delimiter=",")
             try:
@@ -33,10 +33,10 @@ class Binance(TransactionProvider):
                 operation = self._parse_operation(row[3])
                 currency = self._parse_currency(row[4])
                 change = Decimal(row[5])
-                if operation == Operation.UNKNOWN or currency == Currency.UNKNOWN:
+                if operation == Operation.UNKNOWN or currency not in [Currency.USD, Currency.EUR]:
                     continue
                 transactions.append(
-                    Transaction(time_at=time_at, operation=operation, currency=currency, change=change, comment=row[6])
+                    Transfer(time_at=time_at, operation=operation, currency=currency, change=change, comment=row[6])
                 )
         return transactions
 
@@ -54,7 +54,7 @@ class Binance(TransactionProvider):
             return Currency.EUR
         elif v == "USD":
             return Currency.USD
-        return Currency.UNKNOWN
+        return 0
 
-    def get_transactions(self) -> List[Transaction]:
-        return self._transactions
+    def provide_transfers(self) -> List[Transfer]:
+        return self._transfers

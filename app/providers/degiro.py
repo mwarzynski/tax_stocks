@@ -64,7 +64,7 @@ class Degiro:
                 return symbol
         raise Exception(f"unknown product {product}")
 
-    def provide(self) -> List[Transaction]:
+    def provide_transactions(self) -> List[Transaction]:
         files = [f for f in listdir(self.folder) if isfile(join(self.folder, f))]
         transactions = []
         for file in files:
@@ -89,8 +89,8 @@ class Degiro:
     _dividend: Optional[Transaction]
 
     def _parse_dates(self, row: List[str]) -> Tuple[datetime, datetime]:
-        settle_date = datetime.datetime.strptime(row[0], "%d-%m-%Y")
-        trade_date = datetime.datetime.strptime(row[2], "%d-%m-%Y")
+        settle_date = datetime.strptime(row[0], "%d-%m-%Y")
+        trade_date = datetime.strptime(row[2], "%d-%m-%Y")
         trade_date_time_hour = int(row[1].split(":")[0])
         trade_date_time_minutes = int(row[1].split(":")[1])
         trade_date = trade_date.replace(hour=trade_date_time_hour, minute=trade_date_time_minutes)

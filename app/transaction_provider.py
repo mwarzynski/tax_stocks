@@ -5,7 +5,6 @@ from .transaction import Transaction
 
 
 class TransactionProvider:
-
     @abstractmethod
-    def provide(self) -> List[Transaction]:
+    def provide_transactions(self) -> List[Transaction]:
         return []

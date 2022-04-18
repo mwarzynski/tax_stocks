@@ -11,7 +11,6 @@ class Currency(Enum):
 
 
 class Exchange:
-
     @abstractmethod
-    def ratio(self, day: datetime, currency_from: Currency, currency_to: Currency, max_days_prior_to_check: int = 5) -> Decimal:
+    def ratio(self, day: datetime, c_from: Currency, c_to: Currency, max_days_prior_to_check: int = 5) -> Decimal:
         return Decimal(0)

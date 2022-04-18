@@ -1,11 +1,14 @@
 import sys
+from typing import List
 
 import app
 
 
 def help():
-    print("""tax_stocks: computes the profits (and losses) for stocks transactions and dividends for particular fiscal year.
-Example: python main.py 2021""")
+    print(
+        """tax_stocks: computes the profits (and losses) for stocks transactions and dividends for particular fiscal year.
+Example: python main.py 2021"""
+    )
 
 
 def main():
@@ -15,14 +18,18 @@ def main():
         help()
         return
 
-    providers = [
+    revolut = app.Revolut()
+
+    # === Stocks ===
+
+    transaction_providers = [
         app.Degiro(),
-        app.Revolut(),
+        revolut,
     ]
 
-    transactions = []
-    for provider in providers:
-        transactions += provider.provide()
+    transactions: List[app.TransactionProvider] = []
+    for provider in transaction_providers:
+        transactions += provider.provide_transactions()
 
     exchange = app.ExchangeNBP()
 
@@ -38,6 +45,19 @@ def main():
     # Print out all taxable transactions (sells) with buy information.
     # This should contain everything you need to evaluate the tax.
     # account.print_stocks_transactions()
+
+    # === Crypto ===
+
+    transfer_providers = [
+        revolut,
+        app.Binance(),
+    ]
+    transfers = []
+    for provider in transfer_providers:
+        transfers += provider.provide_transfers()
+
+    crypto = app.Crypto(transfers, exchange)
+    crypto.print_summary(year=year)
 
 
 if __name__ == "__main__":

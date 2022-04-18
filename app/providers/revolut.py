@@ -2,10 +2,11 @@ import csv
 from typing import List
 import datetime
 from decimal import Decimal
-from os import listdir
+from os import listdir, stat
 from os.path import isfile, join
 
 from app.transaction import Transaction, Activity
+from app.transfer import Operation, Transfer
 from app.exchange import Currency
 
 
@@ -17,15 +18,55 @@ class Revolut:
         self.folder = folder
         self.print_invalid_lines = print_invalid_lines
 
-    def provide(self) -> List[Transaction]:
+    def provide_transfers(self) -> List[Transfer]:
+        files = [f for f in listdir(self.folder) if isfile(join(self.folder, f))]
+        transfers = []
+        for file in files:
+            if "crypto" not in file:
+                continue
+            transfers += self._provide_transfers_from(join(self.folder, file))
+        return transfers
+
+    def provide_transactions(self) -> List[Transaction]:
         files = [f for f in listdir(self.folder) if isfile(join(self.folder, f))]
         transactions = []
         for file in files:
-            transactions += self._provide_for_file(join(self.folder, file))
+            if "crypto" in file:
+                continue
+            transactions += self._provide_transactions_from(join(self.folder, file))
         return transactions
 
     @staticmethod
-    def _provide_for_file(file_name: str) -> List[Transaction]:
+    def _provide_transfers_from(file_name: str) -> List[Transfer]:
+        transfers = []
+        with open(file_name, "r") as f:
+            reader = csv.reader(f, delimiter=",")
+            try:
+                next(reader)  # skip header row (which contains description of columns)
+            except StopIteration:
+                return []
+            for row in reader:
+                # Date, Operation, Money out, Fee, From, To
+                # Note: This is my custom format that I manually created.
+                #   For this reason, there is no easy way to extract information from Revolut for this Provider.
+                #   Feel free to create your own file to provide crypto transfers data.
+                date = datetime.datetime.strptime(row[0], "%d-%m-%Y")
+                operation = Operation.WITHDRAW
+                value = Decimal(row[6])
+                currency = Currency.PLN
+                transfers.append(
+                    Transfer(
+                        time_at=date,
+                        operation=operation,
+                        currency=currency,
+                        change=value,
+                        comment="",
+                    )
+                )
+        return transfers
+
+    @staticmethod
+    def _provide_transactions_from(file_name: str) -> List[Transaction]:
         transactions = []
         with open(file_name, "r") as f:
             reader = csv.reader(f, delimiter=",")
