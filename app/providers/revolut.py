@@ -28,14 +28,14 @@ class Revolut:
     def _provide_for_file(file_name: str) -> List[Transaction]:
         transactions = []
         with open(file_name, "r") as f:
-            reader = csv.reader(f, delimiter=',')
+            reader = csv.reader(f, delimiter=",")
             try:
                 next(reader)  # skip header row (which contains description of columns)
             except StopIteration:
                 return []
             for row in reader:
                 # Date,Ticker,Type,Quantity,Price per share,Total Amount,Currency,FX Rate
-                date = datetime.datetime.strptime(row[0].split(" ")[0], '%d/%m/%Y')
+                date = datetime.datetime.strptime(row[0].split(" ")[0], "%d/%m/%Y")
 
                 try:
                     activity = Activity(row[2])

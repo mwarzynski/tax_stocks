@@ -14,7 +14,7 @@ class Dividend:
     currency: Currency
 
     def tax_to_pay(self) -> Decimal:
-        tax_total = self.value*Decimal(0.19)
+        tax_total = self.value * Decimal(0.19)
         payable = tax_total - self.tax_deducted
         if payable <= 0:
             return Decimal(0)

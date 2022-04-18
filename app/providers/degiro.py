@@ -2,7 +2,8 @@ import csv
 import re
 from typing import Optional
 from typing import List
-import datetime
+from typing import Tuple
+from datetime import datetime
 from decimal import Decimal
 from os import listdir
 from os.path import isfile, join
@@ -50,7 +51,7 @@ class Degiro:
         "FASTLY": "FSLY",
         "NVIDIA CORPORATION": "NVDA",
         "CD PROJEKT RED": "CDP",
-        "ALPHABET INC. - CLASS A": "GOOGL"
+        "ALPHABET INC. - CLASS A": "GOOGL",
     }
 
     def __init__(self, folder: str = "data/investing/degiro", print_invalid_lines: bool = False):
@@ -70,8 +71,8 @@ class Degiro:
             transactions += self._provide_for_file(join(self.folder, file))
         return transactions
 
-    def _description_to_action(self, description: str) -> (Activity, Decimal, Decimal, str):
-        m = re.search('(Sprzedaż|Kupno) ([\d ]+) (.*)@([0-9,\\xa0]+) ([A-Z]+)', description)
+    def _description_to_action(self, description: str) -> Tuple[Activity, Decimal, Decimal, str]:
+        m = re.search("(Sprzedaż|Kupno) ([\d ]+) (.*)@([0-9,\\xa0]+) ([A-Z]+)", description)
         if not m or len(m.groups()) != 5:
             raise DegiroRowIgnorable()
         groups = m.groups()
@@ -87,9 +88,9 @@ class Degiro:
 
     _dividend: Optional[Transaction]
 
-    def _parse_dates(self, row: List[str]) -> (datetime, datetime):
-        settle_date = datetime.datetime.strptime(row[0], '%d-%m-%Y')
-        trade_date = datetime.datetime.strptime(row[2], '%d-%m-%Y')
+    def _parse_dates(self, row: List[str]) -> Tuple[datetime, datetime]:
+        settle_date = datetime.datetime.strptime(row[0], "%d-%m-%Y")
+        trade_date = datetime.datetime.strptime(row[2], "%d-%m-%Y")
         trade_date_time_hour = int(row[1].split(":")[0])
         trade_date_time_minutes = int(row[1].split(":")[1])
         trade_date = trade_date.replace(hour=trade_date_time_hour, minute=trade_date_time_minutes)
@@ -102,21 +103,21 @@ class Degiro:
         if row[5] == "Dywidenda":
             settle_date, trade_date = self._parse_dates(row)
             self._dividend = Transaction(
-                    trade_date=trade_date,  # 20/04/1969
-                    settle_date=settle_date,  # 20/04/1969
-                    currency=Currency(row[7]),  # USD
-                    activity=Activity.DIV,  # BUY,SELL
-                    symbol=self._product_to_symbol(row[3]),  # AAPL
-                    quantity=Decimal(0),  # 100
-                    price=Decimal(0),  # 420.69
-                    amount=Decimal(row[8].replace(",", ".")),  # 42069
-                    dividend_tax_deducted=Decimal(0),
-                )
+                trade_date=trade_date,  # 20/04/1969
+                settle_date=settle_date,  # 20/04/1969
+                currency=Currency(row[7]),  # USD
+                activity=Activity.DIV,  # BUY,SELL
+                symbol=self._product_to_symbol(row[3]),  # AAPL
+                quantity=Decimal(0),  # 100
+                price=Decimal(0),  # 420.69
+                amount=Decimal(row[8].replace(",", ".")),  # 42069
+                dividend_tax_deducted=Decimal(0),
+            )
             return None
 
         if row[5] == "Podatek Dywidendowy":
             transaction = self._dividend
-            transaction.dividend_tax_deducted = Decimal(row[8].replace(",", "."))*-1
+            transaction.dividend_tax_deducted = Decimal(row[8].replace(",", ".")) * -1
             return transaction
 
     def _parse_fundshare_cash_fund(self, row: List[str]) -> Optional[Transaction]:
@@ -126,7 +127,7 @@ class Degiro:
             return None
         action_description = row[5].replace("Konwersja funduszu gotówkowego: ", "")
 
-        m = re.search('(Sprzedaż|Zakup) (.*) przy (.*) EUR', action_description)
+        m = re.search("(Sprzedaż|Zakup) (.*) przy (.*) EUR", action_description)
         if not m or len(m.groups()) != 3:
             return None
 
@@ -140,23 +141,23 @@ class Degiro:
         trade_date, settle_date = self._parse_dates(row)
 
         transaction = Transaction(
-                    trade_date=trade_date,  # 20/04/1969
-                    settle_date=settle_date,  # 20/04/1969
-                    currency=Currency.EUR,  # EUR
-                    activity=activity,  # BUY,SELL
-                    symbol="#EUR",
-                    quantity=v1,  # 100
-                    price=v2,  # 420.69
-                    amount=v1*v2,  # 42069
-                    dividend_tax_deducted=Decimal(0),
-                )
+            trade_date=trade_date,  # 20/04/1969
+            settle_date=settle_date,  # 20/04/1969
+            currency=Currency.EUR,  # EUR
+            activity=activity,  # BUY,SELL
+            symbol="#EUR",
+            quantity=v1,  # 100
+            price=v2,  # 420.69
+            amount=v1 * v2,  # 42069
+            dividend_tax_deducted=Decimal(0),
+        )
 
         return transaction
 
     def _provide_for_file(self, file_name: str) -> List[Transaction]:
         transactions = []
         with open(file_name, "r") as f:
-            reader = csv.reader(f, delimiter=',')
+            reader = csv.reader(f, delimiter=",")
             try:
                 next(reader)  # skip header row (which contains description of columns)
             except StopIteration:
@@ -198,7 +199,7 @@ class Degiro:
                     symbol=symbol,  # AAPL
                     quantity=quantity,  # 100
                     price=price,  # 420.69
-                    amount=quantity*price,  # 42069
+                    amount=quantity * price,  # 42069
                     dividend_tax_deducted=Decimal(0),
                 )
 

@@ -7,9 +7,9 @@ from .exchange import Currency
 
 
 class Activity(Enum):
-    BUY = "BUY"          # Buy
-    SELL = "SELL"        # Sell
-    DIV = "DIVIDEND"     # Dividend
+    BUY = "BUY"  # Buy
+    SELL = "SELL"  # Sell
+    DIV = "DIVIDEND"  # Dividend
     SSP = "STOCK SPLIT"  # Stock Split
 
 
@@ -19,7 +19,7 @@ class Transaction:
     settle_date: datetime
     currency: Currency
     activity: Activity
-    symbol: str                # 'TSLA'
+    symbol: str  # 'TSLA'
     quantity: Decimal
     price: Decimal
     amount: Decimal

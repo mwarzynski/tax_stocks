@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from decimal import Decimal
 from datetime import datetime
 
@@ -31,8 +31,12 @@ class AccountPosition:
             raise Exception(f"symbol={self.symbol}: you can't sell stock that you don't own")
 
         quantity_sold = min(self._current_positions[0].quantity, sell_quantity)
-        buy_price = self._current_positions[0].price * self._exchange.ratio(self._current_positions[0].date, self._current_positions[0].currency, Currency.PLN)
-        sell_price_ratio = sell_price * self._exchange.ratio(sell_date, self._current_positions[0].currency, Currency.PLN)
+        buy_price = self._current_positions[0].price * self._exchange.ratio(
+            self._current_positions[0].date, self._current_positions[0].currency, Currency.PLN
+        )
+        sell_price_ratio = sell_price * self._exchange.ratio(
+            sell_date, self._current_positions[0].currency, Currency.PLN
+        )
         change = (sell_price_ratio - buy_price) * quantity_sold
 
         rc = RealizedChange(
@@ -53,7 +57,7 @@ class AccountPosition:
 
         return rc
 
-    def sell(self, sell_quantity: Decimal, sell_price: Decimal, sell_date: datetime) -> [RealizedChange]:
+    def sell(self, sell_quantity: Decimal, sell_price: Decimal, sell_date: datetime) -> List[RealizedChange]:
         realized_changes = []
         while not round(sell_quantity, 15) == 0:
             rc = self._sell_i(sell_quantity, sell_price, sell_date)
@@ -63,13 +67,13 @@ class AccountPosition:
 
     def stock_split(self, ratio: Decimal):
         for i, _ in enumerate(self._current_positions):
-            self._current_positions[i].quantity = self._current_positions[i].quantity*ratio
-            self._current_positions[i].price = self._current_positions[i].price/ratio
+            self._current_positions[i].quantity = self._current_positions[i].quantity * ratio
+            self._current_positions[i].price = self._current_positions[i].price / ratio
 
     def dividend(self, value: Decimal, tax_deducted: Decimal, date: datetime, currency: Currency):
         self._dividends.append(Dividend(value, tax_deducted, date, currency))
 
-    def dividends_received(self, year: Optional[int]) -> (Decimal, Decimal, Decimal):
+    def dividends_received(self, year: Optional[int]) -> Tuple[Decimal, Decimal, Decimal]:
         total = Decimal(0)
         tax_to_pay = Decimal(0)
         net = Decimal(0)
@@ -120,9 +124,9 @@ class Account:
 
     def _evaluate_stock_split_ratio(self, transaction: Transaction) -> Decimal:
         ratio = 1
-        if transaction.symbol == 'AAPL' and transaction.settle_date.strftime('%Y-%m-%d') == '2020-08-31':
+        if transaction.symbol == "AAPL" and transaction.settle_date.strftime("%Y-%m-%d") == "2020-08-31":
             ratio = 4
-        if transaction.symbol == 'TSLA' and transaction.settle_date.strftime('%Y-%m-%d') == '2020-08-31':
+        if transaction.symbol == "TSLA" and transaction.settle_date.strftime("%Y-%m-%d") == "2020-08-31":
             ratio = 5
         return Decimal(ratio)
 
@@ -137,7 +141,9 @@ class Account:
             ratio = self._evaluate_stock_split_ratio(transaction)
             position.stock_split(ratio)
         elif transaction.activity == Activity.DIV:
-            position.dividend(transaction.amount, transaction.dividend_tax_deducted, transaction.settle_date, transaction.currency)
+            position.dividend(
+                transaction.amount, transaction.dividend_tax_deducted, transaction.settle_date, transaction.currency
+            )
         self._save_position(position)
 
     def do_transactions(self, transactions: List[Transaction]):
@@ -169,12 +175,12 @@ class Account:
     def position(self, symbol: str) -> AccountPosition:
         return self._positions[symbol]
 
-    def dividends(self, year: Optional[int]) -> (Decimal, Decimal, Decimal):
+    def dividends(self, year: Optional[int]) -> Tuple[Decimal, Decimal, Decimal]:
         total = Decimal(0)
         tax_to_pay = Decimal(0)
         net = Decimal(0)
         for _, position in self._positions.items():
-            a,b,c = position.dividends_received(year)
+            a, b, c = position.dividends_received(year)
             total += a
             tax_to_pay += b
             net += c
@@ -234,7 +240,11 @@ class Account:
             for c in self.position(symbol).realized_changes:
                 if year and c.date_sell.year != year:
                     continue
-                print(f"{symbol}: {c.date_buy.date()} - {c.date_sell.date()}: {c.price_buy} USD -> {c.price_sell} USD (*{round(c.quantity, 8)})"
-                      f" = {round(c.profit, 2)} PLN")
+                print(
+                    f"{symbol}: {c.date_buy.date()} - {c.date_sell.date()}: {c.price_buy} USD -> {c.price_sell} USD (*{round(c.quantity, 8)})"
+                    f" = {round(c.profit, 2)} PLN"
+                )
                 print(f"{c.date_buy.date()}: 1 PLN = {self._exchange.ratio(c.date_buy, c.currency, Currency.PLN)} USD")
-                print(f"{c.date_sell.date()}: 1 PLN = {self._exchange.ratio(c.date_sell, c.currency, Currency.PLN)} USD")
+                print(
+                    f"{c.date_sell.date()}: 1 PLN = {self._exchange.ratio(c.date_sell, c.currency, Currency.PLN)} USD"
+                )
