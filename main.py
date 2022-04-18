@@ -34,7 +34,7 @@ def main():
     exchange = app.ExchangeNBP()
 
     account = app.Account(exchange)
-    account.do_transactions(transactions)
+    account.do_transactions(transactions, year=year)
 
     account.print_stocks(show_summary_per_stock=True, year=year)
     account.print_dividends(year=year)

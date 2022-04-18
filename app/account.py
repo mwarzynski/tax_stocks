@@ -146,9 +146,11 @@ class Account:
             )
         self._save_position(position)
 
-    def do_transactions(self, transactions: List[Transaction]):
+    def do_transactions(self, transactions: List[Transaction], year: int):
         transactions.sort(key=lambda x: x.trade_date)
         for transaction in transactions:
+            if transaction.trade_date.year > year:
+                break
             self.do_transaction(transaction)
 
     def get_profit_per_symbol(self, year: Optional[int] = None) -> Dict[str, Decimal]:
