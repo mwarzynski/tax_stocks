@@ -1,2 +1,3 @@
+data/investing/binance/*.csv
 data/investing/degiro/*.csv
 data/investing/revolut/*.csv
