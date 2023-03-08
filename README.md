@@ -1,32 +1,31 @@
 # tax_stocks
 
-Application computes the profits (and losses) for stocks transactions and dividends for particular fiscal year.
+The application calculates profits (and losses) from stock and dividend transactions for a given tax year.
 
 Polish translation (for SEO): aplikacja licząca podatek od akcji i dywidend.
 
 ## Why?
 
-Most of the applications which provide stock trading functionality for retail traders generate the tax forms automatically.
-At least it is the case if you are a citizen of one of the bigger countries with higher customer concentration.
-I am a Polish citizen and for me neither Degiro nor Revolut prepares the tax form related to stock profits (or losses).
+Most applications that provide stock trading functions for retail investors generate tax forms automatically.
+At least they do if you are a citizen of one of the larger countries with a higher concentration of customers.
+I am a citizen of Poland, and for me, neither Degiro nor Revolut prepares a tax form related to gains (or losses) on stocks.
 
-Have you ever tried to manually evaluate taxes for the stock trades?
-It is extremely repetitive process to say the least, therefore I've decided to automate it.
+Have you ever tried to manually assess taxes for stock transactions?
+It is an extremely repetitive process to say the least, so I decided to automate it.
 
-**Disclaimer: there is NO assurance this application works correctly.**
+**Disclaimer: there is NO assurance that this application works correctly.**
 
-There are certain assumptions hardcoded in the code.
- - polish tax law rules are hardcoded (e.g. 19% income tax, no long-term capital gains)
- - exchange rates based on National Bank of Poland
- - the only supported currencies are USD, EUR and PLN
+There are certain assumptions:
+ - the principles of Polish tax law are hard-coded (e.g., 19% income tax, no long-term capital gains)
+ - currency exchange rates based on the National Bank of Poland
+ - the only currencies supported are USD, EUR and PLN
 
 ## Supported platforms
 
-Current implementation supports two platforms: Revolut and Degiro.
-Transactions providers are implemented behind an interface,
-therefore adding implementation for other platforms should be relatively easy.
+The current implementation supports two platforms: Revolut and Degiro.
+Transaction providers are implemented via an interface, so adding implementations for other platforms should be relatively simple.
 
-Application uses following code structure to keep the CSV files fairly organised: `data/investing/{platform}/{year}.csv`.
+The application uses the following code structure to keep the CSV files fairly organized: `data/investing/{platform}/{year}.csv`.
 
 ### Degiro
 
@@ -50,7 +49,7 @@ Application uses following code structure to keep the CSV files fairly organised
 
 ## How to run
 
-Firstly you need to save the transactions from the platforms you use (instruction above).
+First, you need to save the transactions from the platforms you use (instructions above).
 
 ```
 $ ls -al data/investing/degiro
@@ -63,7 +62,7 @@ $ ls -al data/investing/revolut
 .rw-r--r--    1k mwarzynski  2 Jan 00:00  2021.csv
 ```
 
-If you already have the data, then it's sufficient to run the script as follows:
+If you already have this data, just run the script as follows:
 ```
 $ python main.py
 tax_stocks: computes the profits (and losses) for stocks transactions and dividends for particular fiscal year.
