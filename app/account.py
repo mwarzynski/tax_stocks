@@ -165,6 +165,14 @@ class Account:
                     profits[symbol] = change.profit
         return profits
 
+    def get_tax(self, year: int) -> Decimal:
+        profit = self.get_profit(year)
+        tax = profit * Decimal(0.19)
+        tax = round(tax, 2)
+        if tax < 0:
+            return Decimal(0)
+        return tax
+
     def get_profit(self, year: Optional[int] = None) -> Decimal:
         profit = Decimal(0)
         for _, rcs in self._realized_change.items():
@@ -201,7 +209,7 @@ class Account:
 
         print("=== Stocks\n")
         print(f"Profit = {round((self.get_profit(year)), 4)} PLN")
-        print(f"Tax    = {round((self.get_profit(year))*Decimal(0.19), 4)} PLN")
+        print(f"Tax    = {self.get_tax(year)} PLN")
         cost, profit = self.get_profits(year)
         print(f"Sell: {round(profit, 2)} PLN, Buy: {round(cost, 2)} PLN")
         print("")
