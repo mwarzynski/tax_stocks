@@ -26,13 +26,13 @@ class NBP:
 
     def _load(self, file_name: str):
         with open(file_name, "r") as f:
-            reader = csv.reader(f, delimiter=';')
+            reader = csv.reader(f, delimiter=";")
             next(reader)  # skip header row (which contains description of columns)
             for row in reader:
-                date = datetime.strptime(row[0], '%Y%m%d')
+                date = datetime.strptime(row[0], "%Y%m%d")
                 ratios = {
-                    Currency.EUR: Decimal(row[8]),
-                    Currency.USD: Decimal(row[2]),
+                    Currency.EUR: Decimal(row[8].replace(",", ".")),
+                    Currency.USD: Decimal(row[2].replace(",", ".")),
                 }
                 self._day_ratio[date] = ratios
 
