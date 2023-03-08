@@ -6,10 +6,10 @@ from os import listdir
 from os.path import isfile, join
 
 
-from app.exchange import Currency
+from app.exchange import Currency, Exchange
 
 
-class NBP:
+class NBP(Exchange):
 
     """
     NBP Exchange stands for "National Bank of Poland" exchange.
@@ -20,7 +20,7 @@ class NBP:
 
     def __init__(self, folder: str = "data/nbp"):
         files = [f for f in listdir(folder) if isfile(join(folder, f))]
-        self._day_ratio = {}
+        self._day_ratio: Dict[datetime, Dict[Currency, Decimal]] = {}
         for file in files:
             self._load(join(folder, file))
 

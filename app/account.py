@@ -9,7 +9,6 @@ from .transaction import Transaction, Activity
 
 
 class AccountPosition:
-
     symbol: str
     _current_positions: List[StockEquity]
     _exchange: Exchange
@@ -34,9 +33,7 @@ class AccountPosition:
         buy_price = self._current_positions[0].price * self._exchange.ratio(
             self._current_positions[0].date, self._current_positions[0].currency, Currency.PLN
         )
-        sell_price_ratio = sell_price * self._exchange.ratio(
-            sell_date, self._current_positions[0].currency, Currency.PLN
-        )
+        sell_price_ratio = sell_price * self._exchange.ratio(sell_date, self._current_positions[0].currency, Currency.PLN)
         change = (sell_price_ratio - buy_price) * quantity_sold
 
         rc = RealizedChange(
@@ -90,7 +87,6 @@ class AccountPosition:
 
 
 class Account:
-
     _positions: Dict[str, AccountPosition]
     _realized_change: Dict[str, List[RealizedChange]]
     _dividends: Dict[str, Decimal]
@@ -141,9 +137,7 @@ class Account:
             ratio = self._evaluate_stock_split_ratio(transaction)
             position.stock_split(ratio)
         elif transaction.activity == Activity.DIV:
-            position.dividend(
-                transaction.amount, transaction.dividend_tax_deducted, transaction.settle_date, transaction.currency
-            )
+            position.dividend(transaction.amount, transaction.dividend_tax_deducted, transaction.settle_date, transaction.currency)
         self._save_position(position)
 
     def do_transactions(self, transactions: List[Transaction], year: int):
@@ -203,9 +197,8 @@ class Account:
             quantity = sum([p.quantity for p in position._current_positions])
             print(f"{position.symbol}: {round(quantity, 2)}")
 
-    def print_stocks(self, show_summary_per_stock: bool = False, year: Optional[int] = None):
-        if year:
-            print(f"Year: {year}\n")
+    def print_stocks(self, year: int, show_summary_per_stock: bool = False):
+        print(f"Year: {year}\n")
 
         print("=== Stocks\n")
         print(f"Profit = {round((self.get_profit(year)), 4)} PLN")
@@ -255,6 +248,4 @@ class Account:
                     f" = {round(c.profit, 2)} PLN"
                 )
                 print(f"{c.date_buy.date()}: 1 PLN = {self._exchange.ratio(c.date_buy, c.currency, Currency.PLN)} USD")
-                print(
-                    f"{c.date_sell.date()}: 1 PLN = {self._exchange.ratio(c.date_sell, c.currency, Currency.PLN)} USD"
-                )
+                print(f"{c.date_sell.date()}: 1 PLN = {self._exchange.ratio(c.date_sell, c.currency, Currency.PLN)} USD")

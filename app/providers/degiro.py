@@ -9,6 +9,7 @@ from os import listdir
 from os.path import isfile, join
 
 from app.transaction import Transaction, Activity
+from app.transaction_provider import TransactionProvider
 from app.exchange import Currency
 
 
@@ -16,8 +17,7 @@ class DegiroRowIgnorable(BaseException):
     pass
 
 
-class Degiro:
-
+class Degiro(TransactionProvider):
     folder: str
 
     _product_to_symbol_map = {
@@ -71,7 +71,7 @@ class Degiro:
             transactions += self._provide_for_file(join(self.folder, file))
         return transactions
 
-    def _description_to_action(self, description: str) -> Tuple[Activity, Decimal, Decimal, str]:
+    def _description_to_action(self, description: str) -> Tuple[Activity, Decimal, Decimal, Currency]:
         m = re.search("(Sprzedaż|Kupno) ([\d ]+) (.*)@([0-9,\\xa0]+) ([A-Z]+)", description)
         if not m or len(m.groups()) != 5:
             raise DegiroRowIgnorable()
@@ -117,8 +117,10 @@ class Degiro:
 
         if row[5] == "Podatek Dywidendowy":
             transaction = self._dividend
-            transaction.dividend_tax_deducted = Decimal(row[8].replace(",", ".")) * -1
+            transaction.dividend_tax_deducted = Decimal(row[8].replace(",", ".")) * -1  # type: ignore[union-attr]
             return transaction
+
+        return None
 
     def _parse_fundshare_cash_fund(self, row: List[str]) -> Optional[Transaction]:
         if "FUNDSHARE UCITS EUR CASH FUND" not in row[3]:

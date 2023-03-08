@@ -6,8 +6,7 @@ from app.transfer import *
 
 
 class Binance(TransferProvider):
-
-    _transfers = List[Transfer]
+    _transfers: list[Transfer]
 
     def __init__(self, folder: str = "data/investing/binance") -> None:
         super().__init__()
@@ -35,9 +34,7 @@ class Binance(TransferProvider):
                 change = Decimal(row[5])
                 if operation == Operation.UNKNOWN or currency not in [Currency.USD, Currency.EUR]:
                     continue
-                transactions.append(
-                    Transfer(time_at=time_at, operation=operation, currency=currency, change=change, comment=row[6])
-                )
+                transactions.append(Transfer(time_at=time_at, operation=operation, currency=currency, change=change, comment=row[6]))
         return transactions
 
     @staticmethod
@@ -49,12 +46,12 @@ class Binance(TransferProvider):
         return Operation.UNKNOWN
 
     @staticmethod
-    def _parse_currency(v: str) -> Currency:
+    def _parse_currency(v: str) -> Currency | None:
         if v == "EUR":
             return Currency.EUR
         elif v == "USD":
             return Currency.USD
-        return 0
+        return None
 
     def provide_transfers(self) -> List[Transfer]:
         return self._transfers

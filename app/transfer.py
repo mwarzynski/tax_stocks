@@ -24,7 +24,7 @@ class Transfer:
 
 class TransferProvider:
     @abstractmethod
-    def provide_transfers() -> List[Transfer]:
+    def provide_transfers(self) -> list[Transfer]:
         pass
 
 
@@ -59,7 +59,6 @@ class TransferSummary:
 
 class Crypto(TransferSummary):
     def print_summary(self, year: int):
-
         print("\n\n=== Crypto\n")
 
         r = self.summary(year)

@@ -6,12 +6,13 @@ from os import listdir, stat
 from os.path import isfile, join
 
 from app.transaction import Transaction, Activity
+from app.transaction_provider import TransactionProvider
+from app.transfer import TransferProvider
 from app.transfer import Operation, Transfer
 from app.exchange import Currency
 
 
-class Revolut:
-
+class Revolut(TransactionProvider, TransferProvider):
     folder: str
 
     def __init__(self, folder: str = "data/investing/revolut", print_invalid_lines: bool = False):

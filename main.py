@@ -3,6 +3,10 @@ from typing import List
 
 import app
 
+from app.transaction import Transaction
+from app.transaction_provider import TransactionProvider
+from app.transfer import TransferProvider
+
 
 def help():
     print(
@@ -22,14 +26,14 @@ def main():
 
     # === Stocks ===
 
-    transaction_providers = [
+    transaction_providers: list[TransactionProvider] = [
         app.Degiro(),
         revolut,
     ]
 
-    transactions: List[app.TransactionProvider] = []
-    for provider in transaction_providers:
-        transactions += provider.provide_transactions()
+    transactions: list[Transaction] = []
+    for transaction_provider in transaction_providers:
+        transactions += transaction_provider.provide_transactions()
 
     exchange = app.ExchangeNBP()
 
@@ -48,13 +52,13 @@ def main():
 
     # === Crypto ===
 
-    transfer_providers = [
+    transfer_providers: list[TransferProvider] = [
         revolut,
         app.Binance(),
     ]
     transfers = []
-    for provider in transfer_providers:
-        transfers += provider.provide_transfers()
+    for transfer_provider in transfer_providers:  # type: ignore[assignment]
+        transfers += transfer_provider.provide_transfers()
 
     crypto = app.Crypto(transfers, exchange)
     crypto.print_summary(year=year)
