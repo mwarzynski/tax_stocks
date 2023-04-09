@@ -119,11 +119,9 @@ class Account:
                 self._realized_change[symbol] = [change]
 
     def _evaluate_stock_split_ratio(self, transaction: Transaction) -> Decimal:
-        ratio = 1
-        if transaction.symbol == "AAPL" and transaction.settle_date.strftime("%Y-%m-%d") == "2020-08-31":
-            ratio = 4
-        if transaction.symbol == "TSLA" and transaction.settle_date.strftime("%Y-%m-%d") == "2020-08-31":
-            ratio = 5
+        position = self._get_position(transaction.symbol)
+        current_quantity = sum([p.quantity for p in position._current_positions])
+        ratio = (current_quantity + transaction.quantity) / current_quantity
         return Decimal(ratio)
 
     def do_transaction(self, transaction: Transaction):
