@@ -52,6 +52,9 @@ class Degiro(TransactionProvider):
         "NVIDIA CORPORATION": "NVDA",
         "CD PROJEKT RED": "CDP",
         "ALPHABET INC. - CLASS A": "GOOGL",
+        "INTEL CORPORATION - CO": "INTC",
+        "AMBRA SA": "AMB",
+        "HONEST CO INC/THE": "HNST",
     }
 
     def __init__(self, folder: str = "data/investing/degiro", print_invalid_lines: bool = False):
