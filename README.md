@@ -47,6 +47,13 @@ The application uses the following code structure to keep the CSV files fairly o
  8. Download the statement and convert to CSV,
  9. Save converted file to  `data/investing/revolut/{year}.csv`.
 
+### Binance
+
+ 1. `Wallet` -> `Overview`,
+ 2. `Transaction History` in the left panel,
+ 3. Click on `Generate all statements` in the top right,
+ 4. Choose time range related to desired fiscal year,
+
 ## How to run
 
 First, you need to save the transactions from the platforms you use (instructions above).
