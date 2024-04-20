@@ -34,7 +34,9 @@ class Binance(TransferProvider):
                 change = Decimal(row[5])
                 if operation == Operation.UNKNOWN or currency not in [Currency.USD, Currency.EUR]:
                     continue
-                transactions.append(Transfer(time_at=time_at, operation=operation, currency=currency, change=change, comment=row[6]))
+                transactions.append(
+                    Transfer(time_at=time_at, operation=operation, currency=currency, change=change, comment=row[6])
+                )
         return transactions
 
     @staticmethod

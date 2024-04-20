@@ -33,7 +33,9 @@ class AccountPosition:
         buy_price = self._current_positions[0].price * self._exchange.ratio(
             self._current_positions[0].date, self._current_positions[0].currency, Currency.PLN
         )
-        sell_price_ratio = sell_price * self._exchange.ratio(sell_date, self._current_positions[0].currency, Currency.PLN)
+        sell_price_ratio = sell_price * self._exchange.ratio(
+            sell_date, self._current_positions[0].currency, Currency.PLN
+        )
         change = (sell_price_ratio - buy_price) * quantity_sold
 
         rc = RealizedChange(
@@ -135,7 +137,9 @@ class Account:
             ratio = self._evaluate_stock_split_ratio(transaction)
             position.stock_split(ratio)
         elif transaction.activity == Activity.DIV:
-            position.dividend(transaction.amount, transaction.dividend_tax_deducted, transaction.settle_date, transaction.currency)
+            position.dividend(
+                transaction.amount, transaction.dividend_tax_deducted, transaction.settle_date, transaction.currency
+            )
         self._save_position(position)
 
     def do_transactions(self, transactions: List[Transaction], year: int):
@@ -246,4 +250,6 @@ class Account:
                     f" = {round(c.profit, 2)} PLN"
                 )
                 print(f"{c.date_buy.date()}: 1 PLN = {self._exchange.ratio(c.date_buy, c.currency, Currency.PLN)} USD")
-                print(f"{c.date_sell.date()}: 1 PLN = {self._exchange.ratio(c.date_sell, c.currency, Currency.PLN)} USD")
+                print(
+                    f"{c.date_sell.date()}: 1 PLN = {self._exchange.ratio(c.date_sell, c.currency, Currency.PLN)} USD"
+                )
