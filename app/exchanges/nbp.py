@@ -10,7 +10,6 @@ from app.exchange import Currency, Exchange
 
 
 class NBP(Exchange):
-
     """
     NBP Exchange stands for "National Bank of Poland" exchange.
     It provides the 'standard' exchange rates for currencies (applicable for Polish citizens).
@@ -27,16 +26,28 @@ class NBP(Exchange):
     def _load(self, file_name: str):
         with open(file_name, "r") as f:
             reader = csv.reader(f, delimiter=";")
-            next(reader)  # skip header row (which contains description of columns)
+            currencies = next(reader)  # skip header row (which contains description of columns)
+            index_eur, index_usd = 0, 0
+            for i, currency in enumerate(currencies):
+                if currency == "1USD":
+                    index_usd = i
+                elif currency == "1EUR":
+                    index_eur = i
             for row in reader:
                 date = datetime.strptime(row[0], "%Y%m%d")
                 ratios = {
-                    Currency.EUR: Decimal(row[8].replace(",", ".")),
-                    Currency.USD: Decimal(row[2].replace(",", ".")),
+                    Currency.EUR: Decimal(row[index_eur].replace(",", ".")),
+                    Currency.USD: Decimal(row[index_usd].replace(",", ".")),
                 }
                 self._day_ratio[date] = ratios
 
-    def ratio(self, day: datetime, c_from: Currency, c_to: Currency, max_days_prior_to_check: int = 5) -> Decimal:
+    def ratio(
+        self,
+        day: datetime,
+        c_from: Currency,
+        c_to: Currency,
+        max_days_prior_to_check: int = 5,
+    ) -> Decimal:
         if c_from is Currency.PLN:
             return Decimal(1)
         day = day - timedelta(days=1)
