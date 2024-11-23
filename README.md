@@ -13,7 +13,7 @@ I am a citizen of Poland, and for me, neither Degiro nor Revolut prepares a tax 
 Have you ever tried to manually assess taxes for stock transactions?
 It is an extremely repetitive process to say the least, so I decided to automate it.
 
-**Disclaimer: there is NO assurance that this application works correctly.**
+**Disclaimer: There is NO guarantee that this application works correctly. In fact, it is more likely that it works incorrectly.** (e.g., see incorrect tax values: https://github.com/mwarzynski/tax_stocks/issues/6)
 
 There are certain assumptions:
  - the principles of Polish tax law are hard-coded (e.g., 19% income tax, no long-term capital gains)
